@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Read & Watch · EFUP</title>
+<link rel="stylesheet" href="shared.css" />
+<link rel="stylesheet" href="reading.css" />
+</head>
+<body>
+<section class="reading">
+  <a class="back" href="../index.html">← Hub</a>
+  <div class="r-head">
+    <h1>📚 Read &amp; Watch</h1>
+    <p>A curated list shaped by your notes — the books, articles and videos that
+       sharpen the ideas you keep returning to. Items you already mentioned are tagged.</p>
+  </div>
+
+  <div class="filters" id="filters"></div>
+  <div id="list"></div>
+</section>
+
+<script src="reading-data.js"></script>
+<script>
+const cats = READING.categories;
+let active = 'all';
+
+const filters = document.getElementById('filters');
+function renderFilters(){
+  const opts = [{key:'all',name:'All'},{key:'notes',name:'★ In your notes'},{key:'book',name:'📕 Books'},{key:'article',name:'📝 Articles'},{key:'video',name:'🎥 Video'},{key:'podcast',name:'🎧 Podcast'}];
+  filters.innerHTML = opts.map(o=>`<span class="pill ${o.key===active?'active':''}" data-k="${o.key}">${o.name}</span>`).join('');
+  filters.querySelectorAll('.pill').forEach(p=>p.onclick=()=>{active=p.dataset.k;renderFilters();renderList();});
+}
+function show(it){
+  if(active==='all') return true;
+  if(active==='notes') return !!it.fromNotes;
+  return it.type===active;
+}
+function typeLabel(t){return {book:'📕 Book',article:'📝 Article',video:'🎥 Video',podcast:'🎧 Podcast',course:'🎯 Course',blog:'🌐 Blog'}[t]||t;}
+
+function renderList(){
+  const list=document.getElementById('list');
+  list.innerHTML='';
+  cats.forEach(c=>{
+    const items=c.items.filter(show);
+    if(!items.length) return;
+    const wrap=document.createElement('div');
+    wrap.className='cat';
+    wrap.innerHTML=`<h2>${c.name}</h2><p class="blurb">${c.blurb}</p>`;
+    items.forEach(it=>{
+      const el=document.createElement('div');
+      el.className='r-item';
+      const tags=[];
+      if(it.fromNotes) tags.push('<span class="tag notes">★ in your notes</span>');
+      el.innerHTML=`
+        <div class="r-type">${typeLabel(it.type).split(' ')[0]}</div>
+        <div>
+          <h3><a class="title-link" href="${it.url}" target="_blank" rel="noopener">${it.t}</a></h3>
+          <p class="who">${it.who}</p>
+          <p class="why">${it.why}</p>
+          <div class="r-tags">${tags.join('')}</div>
+        </div>`;
+      wrap.appendChild(el);
+    });
+    list.appendChild(wrap);
+  });
+  if(!list.children.length){
+    list.innerHTML='<p class="muted center">No items of this type — try another filter.</p>';
+  }
+}
+renderFilters();
+renderList();
+</script>
+</body>
+</html>
