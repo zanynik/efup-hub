@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Evolution 2.0 · A Field Manual for the Cosmic Dance</title>
+<link rel="stylesheet" href="shared.css" />
+<link rel="stylesheet" href="book.css" />
+</head>
+<body>
+<section class="book-shell">
+
+  <!-- TITLE PAGE / TOC -->
+  <a class="back" href="../index.html">← Hub</a>
+  <div class="book-title-page">
+    <h1 id="bTitle">Evolution 2.0</h1>
+    <div class="sub" id="bSub"></div>
+    <div class="byline" id="bBy"></div>
+  </div>
+
+  <div class="toolbar">
+    <span class="pill" id="aDown">A−</span>
+    <span class="pill" id="aUp">A+</span>
+    <span class="pill" id="aReset">reset</span>
+  </div>
+
+  <h3 style="color:var(--dim);margin:24px 0 10px;font-size:13px;letter-spacing:2px;text-transform:uppercase">Contents</h3>
+  <ul class="toc" id="toc"></ul>
+
+  <!-- READER -->
+  <div class="reader" id="reader">
+    <a class="back" href="#" id="backToToc">← Contents</a>
+    <div class="progress"><div class="fill" id="fill"></div></div>
+    <div class="ch-num" id="chNum"></div>
+    <h2 id="chTitle"></h2>
+    <div id="chBody"></div>
+
+    <div class="nav-bar">
+      <button id="prev" class="ghost">← Previous</button>
+      <span class="muted" id="position"></span>
+      <button id="next">Next →</button>
+    </div>
+
+    <a href="#" class="back-to-top" id="top">↑ back to top of chapter</a>
+  </div>
+
+</section>
+
+<script src="book-data.js"></script>
+<script>
+const SZ_KEY='efup.book.size';
+let sz = parseFloat(localStorage.getItem(SZ_KEY)) || 18;
+function applySize(){ document.documentElement.style.setProperty('--read-size', sz+'px'); }
+applySize();
+document.getElementById('aUp').onclick=()=>{sz=Math.min(26,sz+1);localStorage.setItem(SZ_KEY,sz);applySize();};
+document.getElementById('aDown').onclick=()=>{sz=Math.max(14,sz-1);localStorage.setItem(SZ_KEY,sz);applySize();};
+document.getElementById('aReset').onclick=()=>{sz=18;localStorage.setItem(SZ_KEY,sz);applySize();};
+
+const chapters = BOOK.chapters;
+document.getElementById('bTitle').textContent = BOOK.title;
+document.getElementById('bSub').textContent = BOOK.subtitle;
+document.getElementById('bBy').textContent = BOOK.byline;
+
+const tocEl = document.getElementById('toc');
+chapters.forEach((c,i)=>{
+  const li=document.createElement('li');
+  li.innerHTML=`<a href="#" data-i="${i}"><span class="n">${c.n}</span><span class="t">${c.title}</span><span class="arrow">→</span></a>`;
+  tocEl.appendChild(li);
+});
+
+function render(i){
+  const c = chapters[i];
+  document.getElementById('chNum').textContent = 'Chapter ' + c.n;
+  document.getElementById('chTitle').textContent = c.title;
+  const body = document.getElementById('chBody');
+  body.innerHTML = c.paragraphs.map((p,idx)=>
+    `<p class="${idx===0?'first':''}">${p}</p>`).join('');
+  document.getElementById('position').textContent = (i+1)+' / '+chapters.length;
+  document.getElementById('fill').style.width = (((i+1)/chapters.length)*100)+'%';
+  document.getElementById('prev').style.visibility = i>0 ? 'visible':'hidden';
+  document.getElementById('next').style.visibility = i<chapters.length-1 ? 'visible':'hidden';
+  document.body.classList.add('in-chapter');
+  window.scrollTo({top:0,behavior:'instant'});
+  // remember position
+  localStorage.setItem('efup.book.pos', i);
+}
+
+function showToc(){
+  document.body.classList.remove('in-chapter');
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+tocEl.querySelectorAll('a').forEach(a=>{
+  a.onclick=(e)=>{e.preventDefault();render(+a.dataset.i);};
+});
+document.getElementById('backToToc').onclick=(e)=>{e.preventDefault();showToc();};
+document.getElementById('prev').onclick=()=>{
+  const cur=+localStorage.getItem('efup.book.pos')||0;
+  if(cur>0) render(cur-1);
+};
+document.getElementById('next').onclick=()=>{
+  const cur=+localStorage.getItem('efup.book.pos')||0;
+  if(cur<chapters.length-1) render(cur+1);
+};
+document.getElementById('top').onclick=(e)=>{e.preventDefault();window.scrollTo({top:0,behavior:'smooth'});};
+
+// keyboard navigation
+document.addEventListener('keydown',(e)=>{
+  if(!document.body.classList.contains('in-chapter')) return;
+  const cur=+localStorage.getItem('efup.book.pos')||0;
+  if(e.key==='ArrowRight' && cur<chapters.length-1) render(cur+1);
+  if(e.key==='ArrowLeft' && cur>0) render(cur-1);
+});
+
+// resume last position on load (optional: open directly into chapter)
+const last = +localStorage.getItem('efup.book.pos');
+if(!isNaN(last) && last>0 && localStorage.getItem('efup.book.visited')){
+  render(last);
+}
+localStorage.setItem('efup.book.visited','1');
+</script>
+</body>
+</html>
