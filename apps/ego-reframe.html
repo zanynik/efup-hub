@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ego Reframe</title>
+<link rel="stylesheet" href="shared.css" />
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🪞 Ego Reframe</h1>
+  <p class="sub">Reality happens irrespective — the ego just tries to make it "for me." Strip the lens and see the situation again.</p>
+
+  <div class="panel">
+    <label>Paste a frustrating thought (in your own voice):</label>
+    <textarea id="in" placeholder="e.g. My manager questioned my work and I feel attacked and undervalued."></textarea>
+    <button id="go" style="margin-top:10px">Reframe</button>
+  </div>
+
+  <div class="panel">
+    <label>Seen without the "I/me/my" lens:</label>
+    <div class="output" id="out">—</div>
+  </div>
+
+  <div class="panel">
+    <p class="muted">From your notes: "Dissolve your ego and focus on your interactions with all others and be kind and compassionate to them, because that is the only influence you have on reality — and that reality is not YOU, it's all outside of you."</p>
+  </div>
+</section>
+
+<script>
+const I_WORDS=[
+  /\bi\b/gi, /\bme\b/gi, /\bmy\b/gi, /\bmine\b/gi, /\bmyself\b/gi,
+  /\bwe\b/gi, /\bus\b/gi, /\bour\b/gi, /\bours\b/gi
+];
+const REPLACEMENTS={
+  attacked:'engaged with',
+  undervalued:'being assessed',
+  disrespected:'met with friction',
+  unfair:'a process running as designed',
+  hate:'creates friction with',
+  unfairness:'the system behaving as it does',
+};
+document.getElementById('go').onclick=()=>{
+  let t=document.getElementById('in').value.trim();
+  if(!t){document.getElementById('out').textContent='(write something first)';return;}
+  // soft rewrites of emotionally loaded phrasing
+  for(const [a,b] of Object.entries(REPLACEMENTS)){
+    t=t.replace(new RegExp('\\b'+a+'\\b','gi'),b);
+  }
+  // remove the first-person lens, leaving the bare event
+  I_WORDS.forEach(re=>t=t.replace(re,''));
+  // tidy doubled spaces & lowercase first letter
+  t=t.replace(/\s+/g,' ').replace(/\s+([.,;!?])/g,'$1').trim();
+  if(t) t=t[0].toUpperCase()+t.slice(1);
+  document.getElementById('out').textContent=t || '(the event itself, with no owner)';
+};
+</script>
+</body>
+</html>

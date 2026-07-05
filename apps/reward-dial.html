@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reward Dial</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .reward{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .reward:last-child{border-bottom:0}
+  .reward input[type=range]{flex:1}
+  .v{width:48px;text-align:right;font-variant-numeric:tabular-nums}
+  .bar{height:8px;border-radius:4px;background:linear-gradient(90deg,#f0883e 0%,#0e1116 50%,#7ee787 100%)}
+  .name{flex:0 0 140px}
+</style>
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🎛️ Reward Dial</h1>
+  <p class="sub">When does reinforcement learning turn into reinforcement addiction? Tune each reward mindfully toward zero — equanimity.</p>
+
+  <div class="panel">
+    <label>The things currently rewarding / punishing you:</label>
+    <div id="list"></div>
+    <div class="row" style="margin-top:12px">
+      <input type="text" id="newName" placeholder="add a reward source (e.g. social media, fame, a crush)"/>
+      <button id="add">Add</button>
+    </div>
+  </div>
+
+  <div class="panel center">
+    <div class="big" id="score">0</div>
+    <p class="muted">Net reward load. Closer to zero = closer to equanimous. High absolute values signal craving or aversion.</p>
+    <p id="advice" class="muted"></p>
+  </div>
+
+  <div class="panel">
+    <p class="muted">From your notes: "The optimal tweaking according to Buddhism is to set rewards to 0. We have learnt that fire burns — we don't need a reward or punishment on this anymore."</p>
+  </div>
+</section>
+
+<script>
+const KEY='efup.reward.items';
+let items = JSON.parse(localStorage.getItem(KEY) || 'null') || [
+  {name:'Work success', v:60},
+  {name:'Social approval', v:70},
+  {name:'A past failure', v:-50},
+];
+const el=document.getElementById('list');
+const score=document.getElementById('score');
+const advice=document.getElementById('advice');
+
+function render(){
+  el.innerHTML='';
+  items.forEach((it,i)=>{
+    const row=document.createElement('div');
+    row.className='reward';
+    row.innerHTML=`
+      <span class="name">${escapeHtml(it.name)}</span>
+      <input type="range" min="-100" max="100" value="${it.v}" data-i="${i}"/>
+      <span class="v" data-v="${i}">${it.v>0?'+':''}${it.v}</span>
+      <button class="ghost" data-del="${i}" style="padding:6px 10px">×</button>`;
+    el.appendChild(row);
+  });
+  el.querySelectorAll('input[type=range]').forEach(r=>{
+    r.oninput=()=>{
+      const i=+r.dataset.i;
+      items[i].v=+r.value;
+      el.querySelector(`[data-v="${i}"]`).textContent=(items[i].v>0?'+':'')+items[i].v;
+      save(); total();
+    };
+  });
+  el.querySelectorAll('[data-del]').forEach(b=>{
+    b.onclick=()=>{ items.splice(+b.dataset.del,1); save(); render(); total(); };
+  });
+  total();
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(items)); }
+function total(){
+  const net=items.reduce((a,b)=>a+b.v,0);
+  const mag=items.reduce((a,b)=>a+Math.abs(b.v),0);
+  score.textContent = (net>=0?'+':'')+net;
+  if(mag<40) advice.textContent='Quiet mind — low attachment all round.';
+  else if(mag<120) advice.textContent='A few hooks. Notice where the dial is far from zero.';
+  else advice.textContent='Lots of pull here. Pick the biggest |value| and ask why it rewards you.';
+}
+document.getElementById('add').onclick=()=>{
+  const n=document.getElementById('newName').value.trim();
+  if(!n) return;
+  items.push({name:n,v:0}); save(); render();
+  document.getElementById('newName').value='';
+};
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+render();
+</script>
+</body>
+</html>

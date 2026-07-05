@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ask Why (5-Whys)</title>
+<link rel="stylesheet" href="shared.css" />
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🪜 Ask Why — and don't stop</h1>
+  <p class="sub">Keep asking why. Never justify the existing way just because it exists.</p>
+
+  <div class="panel">
+    <label>Start with an observation or frustration:</label>
+    <textarea id="seed" placeholder="e.g. People resist automation at work."></textarea>
+    <button id="begin" style="margin-top:10px">Begin the chain</button>
+  </div>
+
+  <div class="panel" id="chain-wrap" style="display:none">
+    <ul class="clean" id="chain"></ul>
+    <div class="row" style="margin-top:8px">
+      <input type="text" id="answer" placeholder="Because..." style="flex:1"/>
+      <button id="ask">Ask why again</button>
+    </div>
+    <p class="muted">Aim for 5 whys. When you reach a belief, you've found the root.</p>
+    <div class="row">
+      <button class="ghost" id="copy">Copy chain</button>
+      <button class="ghost" id="reset">Reset</button>
+    </div>
+  </div>
+</section>
+
+<script>
+const seed=document.getElementById('seed');
+const wrap=document.getElementById('chain-wrap');
+const chainEl=document.getElementById('chain');
+const answer=document.getElementById('answer');
+let depth=0;
+
+function add(q,a){
+  depth++;
+  const li=document.createElement('li');
+  li.innerHTML=`<span class="pill">#${depth}</span> <b>${q}</b><br/><span class="muted">→ ${a||'(no answer yet)'}</span>`;
+  chainEl.appendChild(li);
+}
+
+document.getElementById('begin').onclick=()=>{
+  const s=seed.value.trim();
+  if(!s) return;
+  wrap.style.display='';
+  chainEl.innerHTML='';
+  depth=0;
+  add(s, '');
+  answer.value=''; answer.focus();
+};
+document.getElementById('ask').onclick=()=>{
+  const a=answer.value.trim();
+  if(!a) return;
+  // fill last answer
+  const last=chainEl.lastElementChild;
+  last.innerHTML=last.innerHTML.replace('(no answer yet)',a).replace('→ ','→ ');
+  // append next why
+  add('Why? ('+depth+')', '');
+  answer.value=''; answer.focus();
+  if(depth>=5){
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="pill">root?</span> Is this a belief or a system? If a system — is it worth changing? <a href="ego-reframe.html">reframe it →</a>`;
+    chainEl.appendChild(li);
+  }
+};
+document.getElementById('copy').onclick=()=>{
+  const txt=[...chainEl.querySelectorAll('li')].map(li=>li.innerText).join('\n\n');
+  navigator.clipboard.writeText(txt);
+};
+document.getElementById('reset').onclick=()=>{
+  chainEl.innerHTML=''; wrap.style.display='none'; depth=0;
+};
+</script>
+</body>
+</html>

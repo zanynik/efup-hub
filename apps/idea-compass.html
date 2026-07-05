@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Idea Compass</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+  th{color:var(--dim);font-weight:500}
+  .cell{cursor:pointer;text-align:center;width:42px;height:34px}
+  .cell:hover{outline:1px solid var(--accent)}
+  .a{background:#0d2b18;color:var(--accent)}     /* align */
+  .m{background:#2b1b0d;color:var(--warn)}        /* misalign */
+  .n{background:var(--panel-2);color:var(--dim)}  /* neutral */
+</style>
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🧭 Idea Compass</h1>
+  <p class="sub">Find your people. Click a cell to cycle: align → misalign → neutral. Who shares your direction?</p>
+
+  <div class="panel">
+    <div class="row" style="margin-bottom:10px">
+      <input type="text" id="person" placeholder="add a person" style="flex:1"/>
+      <button id="addP">Add person</button>
+    </div>
+    <div class="row">
+      <input type="text" id="topic" placeholder="add a topic / value" style="flex:1"/>
+      <button id="addT">Add topic</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <table id="grid"></table>
+  </div>
+
+  <div class="panel">
+    <p class="muted"><b id="bestName">—</b> shares the most alignment with you
+       (<span id="bestScore">0</span>/<span id="bestTotal">0</span> aligned).
+       From your notes: on the surface people can seem opposite, yet "words have different meaning when you dig deeper — similarity emerges."</p>
+    <button class="ghost" id="reset">Reset</button>
+  </div>
+</section>
+
+<script>
+const KEY='efup.compass';
+const state = JSON.parse(localStorage.getItem(KEY)||'null') || {
+  people:['Rike','Cathy','Anna'],
+  topics:['honesty','open to change','world-changing ideas','calm presence'],
+  grid:{ }  // key "p|t" -> 'a'|'m'|'n'
+};
+function get(p,t){return state.grid[p+'|'+t]||'n';}
+function cycle(p,t){
+  const cur=get(p,t);
+  const next= cur==='n'?'a':cur==='a'?'m':'n';
+  state.grid[p+'|'+t]=next;
+  save(); render();
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+
+function render(){
+  const g=document.getElementById('grid');
+  let html='<thead><tr><th>person ↓ / topic →</th>';
+  state.topics.forEach(t=>html+=`<th>${escapeHtml(t)}</th>`);
+  html+='<th>align score</th></tr></thead><tbody>';
+  const scores={};
+  state.people.forEach(p=>{
+    html+='<tr><td><b>'+escapeHtml(p)+'</b></td>';
+    let a=0,m=0;
+    state.topics.forEach(t=>{
+      const v=get(p,t);
+      if(v==='a')a++; if(v==='m')m++;
+      html+=`<td class="cell ${v==='a'?'a':v==='m'?'m':'n'}" data-p="${escapeAttr(p)}" data-t="${escapeAttr(t)}">${v==='a'?'✓':v==='m'?'✕':'·'}</td>`;
+    });
+    scores[p]=a-m;
+    html+=`<td class="muted">${a} ✓ · ${m} ✕</td></tr>`;
+  });
+  html+='</tbody>';
+  g.innerHTML=html;
+  g.querySelectorAll('.cell').forEach(c=>{
+    c.onclick=()=>cycle(c.dataset.p,c.dataset.t);
+  });
+  // best
+  let best=null,bestV=-Infinity;
+  Object.entries(scores).forEach(([k,v])=>{if(v>bestV){bestV=v;best=k;}});
+  document.getElementById('bestName').textContent=best||'—';
+  document.getElementById('bestScore').textContent=bestV<0?0:bestV;
+  document.getElementById('bestTotal').textContent=state.topics.length;
+}
+document.getElementById('addP').onclick=()=>{
+  const v=document.getElementById('person').value.trim();
+  if(v && !state.people.includes(v)){state.people.push(v);save();render();}
+  document.getElementById('person').value='';
+};
+document.getElementById('addT').onclick=()=>{
+  const v=document.getElementById('topic').value.trim();
+  if(v && !state.topics.includes(v)){state.topics.push(v);save();render();}
+  document.getElementById('topic').value='';
+};
+document.getElementById('reset').onclick=()=>{
+  if(confirm('Clear all people, topics and marks?')){
+    state.people=[];state.topics=[];state.grid={};save();render();
+  }
+};
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escapeAttr(s){return escapeHtml(s);}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Media Feed</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .themes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .themes .pill{cursor:pointer}
+  .themes .pill.active{background:var(--accent);color:#06210f;border-color:var(--accent)}
+  .item{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px}
+  .item .meta{color:var(--dim);font-size:12px;margin-bottom:6px}
+  .item .body{font-size:14px}
+  .empty{color:var(--dim);text-align:center;padding:30px}
+</style>
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>📻 My Media Feed</h1>
+  <p class="sub">Drop your scattered notes here. They're grouped into a personal podcast-style feed by theme.</p>
+
+  <div class="panel">
+    <label>Paste notes (one per line, or separated by a blank line):</label>
+    <textarea id="src" placeholder="I record insights as audios...&#10;I use NotebookLM to break it down...&#10;&#10;The fear of survival is the most core fear..."></textarea>
+    <div class="row" style="margin-top:10px">
+      <button id="build">Build feed</button>
+      <button class="ghost" id="clear">Clear</button>
+    </div>
+  </div>
+
+  <div class="panel" id="feedWrap" style="display:none">
+    <div class="themes" id="themes"></div>
+    <div id="feed"></div>
+  </div>
+</section>
+
+<script>
+// simple keyword-based theme classifier built from your notes
+const THEMES={
+  'Vipassana / meditation':['vipassana','meditat','sensation','breath','equanim','crav','avers','present moment','observe'],
+  'Ego / self':['ego','i ','me ','my ','maya','illusion','self','dissolve'],
+  'AI / tech':['ai','llm','gpt','notebooklm','rag','prompt','model','automat','agent','github','code','python','nost'],
+  'Zero-profit / economy':['profit','grocery','surplus','gift economy','economy','money','refun','capital','price','food'],
+  'Curiosity / why':['why','question','curiosity','status quo','justif'],
+  'Relationships / people':['friend','date','partner','align','people','connect'],
+};
+function classify(text){
+  const low=text.toLowerCase();
+  const tags=[];
+  for(const [theme,kws] of Object.entries(THEMES)){
+    if(kws.some(k=>low.includes(k))) tags.push(theme);
+  }
+  return tags.length?tags:['Other'];
+}
+function split(input){
+  return input.split(/\n\s*\n/).map(b=>b.trim()).filter(Boolean)
+    .flatMap(b=> b.includes('\n')&&b.length<400 ? [b] : [b]);
+}
+let items=[], activeTheme='All';
+function build(){
+  const src=document.getElementById('src').value;
+  items=split(src).map(t=>({t, themes:classify(t)}));
+  render();
+}
+function render(){
+  document.getElementById('feedWrap').style.display='';
+  const themes=['All',...new Set(items.flatMap(i=>i.themes))];
+  const tEl=document.getElementById('themes');
+  tEl.innerHTML=themes.map(t=>`<span class="pill ${t===activeTheme?'active':''}" data-t="${escapeAttr(t)}">${escapeHtml(t)}</span>`).join('');
+  tEl.querySelectorAll('.pill').forEach(p=>p.onclick=()=>{activeTheme=p.dataset.t;render();});
+  const feed=document.getElementById('feed');
+  const shown=items.filter(i=>activeTheme==='All'||i.themes.includes(activeTheme));
+  if(!shown.length){feed.innerHTML='<div class="empty">No items.</div>';return;}
+  feed.innerHTML=shown.map((it,i)=>`
+    <div class="item">
+      <div class="meta">Episode ${i+1} · ${it.themes.map(escapeHtml).join(' · ')}</div>
+      <div class="body">${escapeHtml(it.t).slice(0,400)}${it.t.length>400?'…':''}</div>
+    </div>`).join('');
+}
+document.getElementById('build').onclick=build;
+document.getElementById('clear').onclick=()=>{
+  document.getElementById('src').value='';items=[];document.getElementById('feedWrap').style.display='none';
+};
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escapeAttr(s){return escapeHtml(s);}
+</script>
+</body>
+</html>

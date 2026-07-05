@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mantra Rotator</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .stage{height:60vh;display:flex;align-items:center;justify-content:center;text-align:center}
+  .stage .line{font-size:clamp(22px,5vw,40px);max-width:680px;line-height:1.4;
+    opacity:0;transition:opacity 2s ease;color:var(--accent)}
+  .stage .line.on{opacity:1}
+  .controls{justify-content:center;gap:14px}
+</style>
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>∞ Mantra Rotator</h1>
+  <p class="sub">An ambient page. Let it run in the background.</p>
+
+  <div class="panel stage"><div class="line" id="line"></div></div>
+
+  <div class="row controls" style="margin-top:10px">
+    <span class="pill"><label for="sec" style="margin:0">seconds per line</label></span>
+    <input id="sec" type="number" value="7" min="3" max="30" style="width:80px"/>
+    <button id="pause" class="ghost">Pause</button>
+  </div>
+
+  <div class="panel">
+    <label>Lines (yours — edit &amp; save locally):</label>
+    <textarea id="seed">Reality happens irrespective.
+You have the right to work, never to the fruits.
+Set the reward to zero.
+Dissolve the ego.
+Everything is impermanent.
+Trust the present.
+We are nature.
+Hold the contradictions together.
+Just keep doing.</textarea>
+    <button class="ghost" id="save" style="margin-top:10px">Save lines</button>
+  </div>
+</section>
+
+<script>
+const KEY='efup.mantra';
+const ta=document.getElementById('seed');
+const line=document.getElementById('line');
+if(localStorage.getItem(KEY)) ta.value=localStorage.getItem(KEY);
+document.getElementById('save').onclick=()=>{localStorage.setItem(KEY,ta.value);};
+
+let timer=null, idx=0;
+function lines(){return ta.value.split('\n').map(s=>s.trim()).filter(Boolean);}
+function show(){
+  const L=lines(); if(!L.length){line.textContent='';return;}
+  line.classList.remove('on');
+  setTimeout(()=>{ line.textContent=L[idx%L.length]; idx++; line.classList.add('on'); },800);
+}
+function start(){
+  if(timer) clearInterval(timer);
+  show();
+  const sec=Math.max(3,parseInt(document.getElementById('sec').value)||7);
+  timer=setInterval(show,sec*1000);
+}
+document.getElementById('pause').onclick=(e)=>{
+  if(timer){clearInterval(timer);timer=null;e.target.textContent='Resume';}
+  else{start();e.target.textContent='Pause';}
+};
+document.getElementById('sec').onchange=start;
+start();
+</script>
+</body>
+</html>

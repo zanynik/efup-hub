@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Voice-to-Idea Notepad</title>
+<link rel="stylesheet" href="shared.css" />
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🎙️ Voice-to-Idea Notepad</h1>
+  <p class="sub">Talk it out as a monologue, then break it into small verifiable chunks — your actual workflow.</p>
+
+  <div class="panel">
+    <div class="row">
+      <button id="rec">● Record</button>
+      <button id="stop" class="ghost">Stop</button>
+      <span id="status" class="muted">Uses your browser's own speech recognition — no keys, no upload.</span>
+    </div>
+    <textarea id="transcript" placeholder="Captured text appears here. You can also paste directly." style="margin-top:12px"></textarea>
+    <button id="split" style="margin-top:10px">Break into chunks</button>
+  </div>
+
+  <div class="panel">
+    <label>Chunks you can verify one by one:</label>
+    <ul class="clean" id="chunks"></ul>
+    <p class="muted" id="hint"></p>
+  </div>
+</section>
+
+<script>
+const recBtn=document.getElementById('rec');
+const stopBtn=document.getElementById('stop');
+const ta=document.getElementById('transcript');
+const statusEl=document.getElementById('status');
+let recog=null, listening=false;
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){
+  statusEl.textContent='Speech recognition not supported here — paste your text instead.';
+  recBtn.disabled=true; stopBtn.disabled=true;
+} else {
+  recog=new SR();
+  recog.continuous=true; recog.interimResults=true; recog.lang='en-US';
+  let final='';
+  recog.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal) final+=r[0].transcript+' ';
+      else interim+=r[0].transcript;
+    }
+    ta.value=(final+interim).trim();
+  };
+  recog.onend=()=>{ if(listening){ try{recog.start();}catch(e){} } };
+  recBtn.onclick=()=>{
+    listening=true; final=ta.value?ta.value+' ':'';
+    try{recog.start();statusEl.textContent='Listening…';}catch(e){}
+  };
+  stopBtn.onclick=()=>{ listening=false; try{recog.stop();}catch(e){} statusEl.textContent='Stopped.'; };
+}
+
+function chunks(text){
+  // split into sentences, then group short ones
+  const sents=text.replace(/\s+/g,' ').match(/[^.!?]+[.!?]*/g)||[text];
+  const out=[]; let buf='';
+  sents.forEach(s=>{
+    s=s.trim(); if(!s)return;
+    if((buf+' '+s).length>180){ if(buf)out.push(buf.trim()); buf=s; }
+    else buf=(buf+' '+s).trim();
+  });
+  if(buf)out.push(buf.trim());
+  return out;
+}
+document.getElementById('split').onclick=()=>{
+  const list=document.getElementById('chunks');
+  const parts=chunks(ta.value);
+  list.innerHTML='';
+  if(!parts.length){document.getElementById('hint').textContent='Nothing to split yet.';return;}
+  parts.forEach((p,i)=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="pill">#${i+1}</span> ${escapeHtml(p)}<br/><span class="tag-row"><span class="pill" data-a="${i}">✓ verified</span> <span class="pill" data-r="${i}">↻ rework</span></span>`;
+    list.appendChild(li);
+  });
+  document.getElementById('hint').textContent='Verify each chunk. Rework the ones that don\'t hold up — that\'s the whole point of breaking AI work small.';
+  list.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>b.style.background='var(--accent)');
+  list.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>b.style.background='var(--warn)');
+};
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+</body>
+</html>

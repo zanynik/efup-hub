@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zero-Profit Calculator</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+  .stat .box{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .stat .box .n{font-size:22px;font-weight:700;color:var(--accent)}
+  .stat .box .l{color:var(--dim);font-size:12px}
+</style>
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🛒 Zero-Profit Calculator</h1>
+  <p class="sub">If a grocery store refused profit and refunded the surplus — what would that look like?</p>
+
+  <div class="panel">
+    <div class="row">
+      <div style="flex:1"><label>Unit cost to you (€)</label><input type="number" id="cost" value="1.00" step="0.01"/></div>
+      <div style="flex:1"><label>Shelf price (€)</label><input type="number" id="price" value="1.20" step="0.01"/></div>
+      <div style="flex:1"><label>Units sold / month</label><input type="number" id="units" value="5000" step="1"/></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="calc">Calculate</button>
+      <span class="muted">A zero-profit store sets price = true cost. Any surplus is refunded to customers, not pocketed.</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="stat">
+      <div class="box"><div class="n" id="profit">—</div><div class="l">Conventional profit (€/mo)</div></div>
+      <div class="box"><div class="n" id="surplus">—</div><div class="l">Surplus you'd refund (€/mo)</div></div>
+      <div class="box"><div class="n" id="refund">—</div><div class="l">Refund per customer (€)</div></div>
+      <div class="box"><div class="n" id="zprice">—</div><div class="l">True zero-profit price (€)</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="muted">Why? The fear of survival is the most core fear. If food approaches free, the grip loosens. The store isn't a charity — it's a conscious act of non-craving structurally embedded in a business. Any surplus is transparently refunded, embodying the practice of letting go.</p>
+    <p class="muted">Scale path: pop-up → store → chain → food company → supply chain. As prices spiral down, the gift economy emerges.</p>
+  </div>
+</section>
+
+<script>
+function num(id){return parseFloat(document.getElementById(id).value)||0;}
+function money(n){return '€'+n.toLocaleString('en',{maximumFractionDigits:2,minimumFractionDigits:2});}
+document.getElementById('calc').onclick=()=>{
+  const cost=num('cost'), price=num('price'), units=num('units');
+  const profit=(price-cost)*units;
+  const surplus=Math.max(0,profit); // in zero-profit model, this is refunded
+  const refund=units?surplus/units:0;
+  const zprice=cost;
+  document.getElementById('profit').textContent=money(profit);
+  document.getElementById('surplus').textContent=money(surplus);
+  document.getElementById('refund').textContent=money(refund);
+  document.getElementById('zprice').textContent=money(zprice);
+};
+document.getElementById('calc').click();
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Present-Moment Reminder</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .breath{height:180px;width:180px;border-radius:50%;margin:24px auto;
+    background:radial-gradient(circle,#1c232c,#0e1116);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;transition:transform 4s ease;color:var(--accent);font-weight:600}
+  .controls{justify-content:center}
+</style>
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🌬️ Present-Moment Reminder</h1>
+  <p class="sub">Trust the present. Welcome it. Every moment is a present.</p>
+
+  <div class="panel center">
+    <div class="breath" id="breath">breathe</div>
+    <div id="reminder" class="big">Tap start.</div>
+    <div class="row controls" style="margin-top:16px">
+      <button id="start">Start</button>
+      <button id="stop" class="ghost">Stop</button>
+      <span class="pill" id="phase">idle</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label>Every breath, surface one of these (yours — edit freely, saved in your browser):</label>
+    <textarea id="seed">Reality happens irrespective.
+You have the right to work, never to the fruits.
+Set the reward to zero — equanimity.
+Dissolve the ego; see it for what it is.
+Sensations come and go. Observe without reaction.
+Don't place your happiness on a few events.
+Trust the present. Accept it. Welcome it. Embrace it.</textarea>
+    <button class="ghost" id="save" style="margin-top:10px">Save reminders</button>
+    <p class="muted" id="saved-note"></p>
+  </div>
+</section>
+
+<script>
+const KEY='efup.present.seed';
+const ta=document.getElementById('seed');
+const saved=localStorage.getItem(KEY);
+if(saved) ta.value=saved;
+document.getElementById('save').onclick=()=>{
+  localStorage.setItem(KEY,ta.value);
+  document.getElementById('saved-note').textContent='Saved locally.';
+};
+
+const breath=document.getElementById('breath');
+const rem=document.getElementById('reminder');
+const phase=document.getElementById('phase');
+let timer=null, idx=0;
+function lines(){return ta.value.split('\n').map(s=>s.trim()).filter(Boolean);}
+
+function step(){
+  const L=lines();
+  if(!L.length){rem.textContent='(add some reminders first)';return;}
+  rem.textContent=L[idx % L.length]; idx++;
+  // breathe in/out cycle
+  phase.textContent='in';
+  breath.style.transform='scale(1.25)';
+  setTimeout(()=>{phase.textContent='out';breath.style.transform='scale(1)';},4000);
+}
+document.getElementById('start').onclick=()=>{
+  if(timer) return;
+  step();
+  timer=setInterval(step,8000);
+};
+document.getElementById('stop').onclick=()=>{
+  clearInterval(timer); timer=null; phase.textContent='idle';
+  breath.style.transform='scale(1)';
+};
+</script>
+</body>
+</html>
