@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Root Node · EFUP</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .node{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px;margin:8px 0}
+  .node .name{font-weight:600}
+  .node .why{color:var(--dim);font-size:13px;margin-top:4px}
+  .root{border-color:var(--accent);background:#16201a}
+  .root .name{color:var(--accent)}
+  .lvl{color:var(--dim);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:18px 0 6px}
+  progress{width:100%;height:6px;border-radius:3px;overflow:hidden}
+  progress::-webkit-progress-bar{background:var(--panel-2);border-radius:3px}
+  progress::-webkit-progress-value{background:var(--accent);border-radius:3px}
+</style>
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🌳 Root Node</h1>
+  <p class="sub">"This is the root-node problem. The one project that, if solved, unlocks all the others." — Big AI Root Node memo, Jan 2026.</p>
+
+  <div class="panel">
+    <p class="muted">Pick the dependency that, if you cleared it, would unblock the most other work. Click a node to mark it as your current root. Progress is saved locally.</p>
+  </div>
+
+  <div class="panel" id="list"></div>
+
+  <div class="panel">
+    <p class="muted"><b>The principle.</b> From your own notes: you keep returning to old projects because there's no map of which one is upstream of the others. The RAG-vs-RAI knowledge project is upstream of the book, the writing platform, and the AI-people-connector — because all of them depend on your ideas being organized and retrievable. Solve the root first. The branches get easier.</p>
+  </div>
+</section>
+
+<script>
+const KEY='efup.rootnode';
+const NODES = [
+  {id:'organize', name:'Organize my knowledge (RAG / RAI, "the book")', why:'The root. Everything else — the writing platform, the connector, the apps — is downstream of your ideas being structured & retrievable.'},
+  {id:'book',     name:'Finish the book / articles',                    why:'Needs the knowledge organized first. Becomes the public face of the whole thesis.'},
+  {id:'platform', name:'Crowd-sourced writing platform',                why:'Depends on knowing your own ideas + the LLM-as-judge workflow. Builds community.'},
+  {id:'connect',  name:'AI people-connector ("find your people")',      why:'Needs the thesis clear enough to match on. Depends on the book/platform.'},
+  {id:'zpgs',     name:'Zero-profit grocery store',                     why:'The real-world experiment. Can start small now; scales with the trust the other projects build.'},
+  {id:'music',    name:'AI music + video as expression',                why:'Parallel outlet. Independent of the others — a joy stream, not a dependency.'},
+  {id:'meditate', name:'Daily Vipassana + body practice',               why:'Not a project so much as the soil everything grows in. Starve this and everything else degrades.'},
+];
+let state = JSON.parse(localStorage.getItem(KEY) || '{}');
+if(!state.root) state.root='organize';
+if(!state.done) state.done={};
+
+function save(){localStorage.setItem(KEY, JSON.stringify(state));}
+function render(){
+  const list=document.getElementById('list');
+  list.innerHTML = NODES.map(n=>{
+    const isRoot = state.root===n.id;
+    const done = state.done[n.id];
+    return `
+    <div class="node ${isRoot?'root':''}">
+      <div class="row">
+        <div style="flex:1">
+          <div class="name">${isRoot?'⭐ ':''}${n.name} ${done?'✓':''}</div>
+          <div class="why">${n.why}</div>
+        </div>
+        <button class="ghost" data-root="${n.id}" style="padding:6px 12px">${isRoot?'root':'make root'}</button>
+        <button class="ghost" data-done="${n.id}" style="padding:6px 12px">${done?'undo':'done'}</button>
+      </div>
+      ${isRoot?`<progress value="${done?100:15}" max="100" style="margin-top:10px"></progress>
+                <p class="muted" style="margin:6px 0 0">This is your current root node. Work here first.</p>`:''}
+    </div>`;
+  }).join('');
+  list.querySelectorAll('[data-root]').forEach(b=>b.onclick=()=>{state.root=b.dataset.root;save();render();});
+  list.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{state.done[b.dataset.done]=!state.done[b.dataset.done];save();render();});
+}
+render();
+</script>
+</body>
+</html>

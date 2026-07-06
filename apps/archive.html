@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Audio Archive · EFUP</title>
+<link rel="stylesheet" href="shared.css" />
+<link rel="stylesheet" href="archive.css" />
+</head>
+<body>
+<section class="archive">
+  <a class="back" href="../index.html">← Hub</a>
+  <div class="a-head">
+    <h1>🎙️ Audio Archive</h1>
+    <p>Every voice memo and audio note — transcribed, searchable, dated.
+       The raw material the rest of this site is built from.</p>
+  </div>
+  <div class="a-stats" id="stats"></div>
+
+  <div class="a-controls">
+    <input type="search" id="q" placeholder="Search transcripts (e.g. vipassana, AI agents, money, Rike)…" />
+    <select id="source">
+      <option value="all">All sources</option>
+      <option value="voice-memo">Voice memos</option>
+      <option value="fresh-transcript">★ Freshly transcribed</option>
+    </select>
+    <select id="sort">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+      <option value="longest">Longest first</option>
+    </select>
+  </div>
+
+  <div id="list"></div>
+</section>
+
+<script src="archive-data.js"></script>
+<script>
+const ALL = ARCHIVE.entries;
+let q='', src='all', sort='newest';
+
+document.getElementById('stats').innerHTML = `
+  <span><b>${ALL.length}</b> transcripts</span>
+  <span><b>${ALL.reduce((a,b)=>a+b.words,0).toLocaleString()}</b> words</span>
+  <span><b>${ALL.filter(e=>e.source==='fresh-transcript').length}</b> freshly transcribed</span>
+  <span>from <b>${ALL[ALL.length-1]?.date||'—'}</b> to <b>${ALL[0]?.date||'—'}</b></span>
+`;
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function highlight(text, term){
+  if(!term) return esc(text.slice(0,420))+(text.length>420?'…':'');
+  const low=text.toLowerCase(), tlow=term.toLowerCase();
+  const idx=low.indexOf(tlow);
+  if(idx<0) return esc(text.slice(0,300))+'…';
+  const start=Math.max(0,idx-120);
+  const snippet=text.slice(start, idx+term.length+260);
+  const before = start>0?'…':'';
+  const after = (idx+term.length+260 < text.length)?'…':'';
+  return before + esc(snippet.slice(0, snippet.toLowerCase().indexOf(tlow))) +
+         '<mark>'+esc(term)+'</mark>' +
+         esc(snippet.slice(snippet.toLowerCase().indexOf(tlow)+term.length)) + after;
+}
+
+function render(){
+  let list = ALL.filter(e=>{
+    if(src!=='all' && e.source!==src) return false;
+    if(q){
+      const low=(e.body+' '+e.place+' '+e.date).toLowerCase();
+      if(!low.includes(q.toLowerCase())) return false;
+    }
+    return true;
+  });
+  if(sort==='newest') list.sort((a,b)=>a.date<b.date?1:-1);
+  if(sort==='oldest') list.sort((a,b)=>a.date>b.date?1:-1);
+  if(sort==='longest') list.sort((a,b)=>a.words<b.words?1:-1);
+
+  const el=document.getElementById('list');
+  if(!list.length){ el.innerHTML='<p class="a-empty">No transcripts match.</p>'; return; }
+  el.innerHTML = list.slice(0,200).map(e=>`
+    <div class="a-entry ${e.source==='fresh-transcript'?'fresh':''}">
+      <div class="meta">
+        <span class="when">${e.date||'—'}${e.source==='fresh-transcript'?'<span class="badge-fresh">new</span>':''}</span>
+        <span class="where">${esc(e.place)}</span>
+        <span class="cnt">${e.words} words</span>
+      </div>
+      <p class="body">${highlight(e.body, q)}</p>
+    </div>`).join('');
+  if(list.length>200){
+    el.innerHTML += `<p class="a-empty">…and ${list.length-200} more — refine your search to see them.</p>`;
+  }
+}
+
+['q','source','sort'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',e=>{
+    if(id==='q') q=e.target.value.trim();
+    if(id==='source') src=e.target.value;
+    if(id==='sort') sort=e.target.value;
+    render();
+  });
+});
+render();
+</script>
+</body>
+</html>

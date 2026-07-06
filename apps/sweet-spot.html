@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Sweet Spot · EFUP</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .venn-wrap{display:flex;justify-content:center;padding:20px 0}
+  .venn{position:relative;width:380px;height:300px}
+  .circle{position:absolute;width:220px;height:220px;border-radius:50%;opacity:.55;mix-blend-mode:screen;display:flex;align-items:flex-start;justify-content:center;padding-top:14px;font-weight:600}
+  .c1{background:#f0883e;color:#fff;left:0;top:0}
+  .c2{background:#79c0ff;color:#06210f;left:160px;top:0}
+  .c3{background:#7ee787;color:#06210f;left:80px;top:120px}
+  .center-label{position:absolute;left:50%;top:62%;transform:translate(-50%,-50%);text-align:center;font-weight:700;color:var(--accent);font-size:14px;text-shadow:0 0 8px #000}
+  @media(max-width:440px){.venn{transform:scale(.78);transform-origin:top center}}
+</style>
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🎯 The Sweet Spot</h1>
+  <p class="sub">Where oneness, the practical, and the economic actually meet.</p>
+
+  <div class="panel">
+    <div class="venn-wrap">
+      <div class="venn">
+        <div class="circle c1">Oneness /<br/>Vipassana</div>
+        <div class="circle c2">Practical<br/>tech &amp; AI</div>
+        <div class="circle c3">Monetary<br/>system critique</div>
+        <div class="center-label">YOUR WORK<br/>LIVES HERE</div>
+      </div>
+    </div>
+    <p class="muted">From the English Garden memo, Feb 2026: "My work is about the sweet spot between oneness/wider meditation theory, practicality, and the monetary-economic-system / capitalism problem." Not one circle. The overlap.</p>
+  </div>
+
+  <div class="panel">
+    <label>Most people live in one circle. Where do <i>you</i> spend most of your time this week?</label>
+    <div id="vote" class="row" style="gap:8px;margin-top:8px"></div>
+    <p id="verdict" class="muted" style="margin-top:12px"></p>
+  </div>
+
+  <div class="panel">
+    <p class="muted"><b>How to read it.</b> Pure spirituality without practice → escapism. Pure tech without purpose → another addictive product. Pure critique without a tool → complaining. The sweet spot — Vipassana's <i>practice</i>, AI's <i>leverage</i>, and the zero-profit <i>experiment</i> — is where doing meets meaning meets system-change. That is the only place your particular set of notes could have come from. Stay there.</p>
+  </div>
+</section>
+
+<script>
+const KEY='efup.sweetspot';
+const opts=[
+  {k:'c1',t:'Oneness / Vipassana', msg:'Beautiful, but watch the escapism trap. Pull toward the overlap.'},
+  {k:'c2',t:'Tech / AI',          msg:'Powerful, but untethered it becomes another craving-engine. What is it for?'},
+  {k:'c3',t:'System critique',    msg:'True, but critique alone is an MVP that ships nothing. Build the experiment.'},
+  {k:'all',t:'The overlap',       msg:'Stay here. This is where everything you have actually works.'},
+];
+let pick=localStorage.getItem(KEY)||'';
+function render(){
+  document.getElementById('vote').innerHTML = opts.map(o=>
+    `<button class="${pick===o.k?'':'ghost'}" data-k="${o.k}" style="padding:8px 14px">${o.t}</button>`).join('');
+  document.getElementById('vote').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    pick=b.dataset.k; localStorage.setItem(KEY,pick); render();
+  });
+  const o=opts.find(x=>x.k===pick);
+  document.getElementById('verdict').textContent = o ? o.msg : 'Pick one to see a note.';
+}
+render();
+</script>
+</body>
+</html>

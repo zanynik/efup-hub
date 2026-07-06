@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent ↔ Society · EFUP</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .map{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .map .h{padding:12px 16px;font-weight:600;background:var(--panel-2)}
+  .map .h.left{color:var(--accent-2)}
+  .map .h.right{color:var(--accent)}
+  .map .pair{display:contents}
+  .map .cell{padding:14px 16px;border-top:1px solid var(--line);font-size:14px;line-height:1.55}
+  .map .cell.left{border-right:1px solid var(--line)}
+  .map .lbl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;display:block}
+  @media(max-width:640px){.map{grid-template-columns:1fr}.map .cell.left{border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<section class="app">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🤝 Agent ↔ Society</h1>
+  <p class="sub">"Problems in coding agents map one-to-one with problems in society." — Rochester Row memo, Apr 2026.</p>
+
+  <div class="panel">
+    <p class="muted">From a London walk after an AI-engineering conference: every bug we hit in multi-agent coding systems has a twin in how human society fails to collaborate. Solving one is a glimpse at solving the other.</p>
+  </div>
+
+  <div class="panel">
+    <div class="map" id="grid"></div>
+  </div>
+
+  <div class="panel">
+    <p class="muted"><b>Why it matters.</b> If protests are "an MVP that ships nothing," and an agent prototype is the same — a quick demo that never solves the real problem — then the discipline we need is identical in both: a design doc up front, modular data handoff, skills instead of one giant context window, and tests that actually verify the work. The tool you'd build for agents is the tool you'd build for groups of humans.</p>
+  </div>
+</section>
+
+<script>
+const PAIRS = [
+  {a:"Context window fills up → agent forgets the original goal, drifts.", s:"A new person joins a project mid-way → never absorbs the founding intent, re-litigates settled decisions."},
+  {a:"Every sub-agent looks at the codebase like a different person — no shared memory.", s:"Citizens show up to politics with no shared facts → superficial, emotional solutions."},
+  {a:"Prototype ships fast (every agent pitches an idea), but nobody does the integration work.", s:"A protest is an MVP: energy, attention, then nothing changes."},
+  {a:"Agents can't verify each other's claims without re-doing the work.", s:"Institutions can't audit each other without duplicating the entire effort."},
+  {a:"Lost-in-the-middle: key instructions buried in the prompt get ignored.", s:"Bureaucracies: the actual purpose of a rule gets buried under the rule itself."},
+  {a:"One strong agent dominates the plan; others become yes-agents.", s:"The loudest voice in the room sets policy; the silent majority never weighs in."},
+  {a:"No design document → each agent rebuilds the spec from scratch.", s:"No constitution / shared principles → each generation re-fights the same fights."},
+  {a:"Tests are skipped to ship faster; regressions accumulate.", s:"Long-term institutions underfund maintenance; decay is invisible until collapse."},
+];
+const grid=document.getElementById('grid');
+grid.innerHTML = `
+  <div class="h left">🤖 In a coding-agent system</div>
+  <div class="h right">👥 In human society</div>` +
+  PAIRS.map(p=>`
+    <div class="pair">
+      <div class="cell left"><span class="lbl">agent failure</span>${p.a}</div>
+      <div class="cell right"><span class="lbl">society failure</span>${p.s}</div>
+    </div>`).join('');
+</script>
+</body>
+</html>

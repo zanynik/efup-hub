@@ -147,7 +147,9 @@ window.READING = {
         { t:"Veritasium", who:"Derek Muller", type:"video", fromNotes:true, url:"https://www.youtube.com/@veritasium",
           why:"You referenced the selfish-gene Veritasium video (and your disagreement with it). His back-catalogue is a feed of good 'ask why' prompts." },
         { t:"The Zeitgeist Movement / Peter Joseph", who:"Peter Joseph", type:"podcast", fromNotes:true, url:"https://www.thezeitgeistmovement.com",
-          why:"You were listening to his podcast when you wrote 'How system conditioned are you?' The source for the 'collaborative rational document' idea." }
+          why:"You were listening to his podcast when you wrote 'How system conditioned are you?' The source for the 'collaborative rational document' idea." },
+        { t:"Designing Data-Intensive Applications", who:"Martin Kleppmann", type:"book", url:"https://dataintensive.net",
+          why:"The clearest book on how distributed systems actually work — the shared-memory / context-window problem you mapped onto society has its real engineering answer here." }
       ]
     },
     {
@@ -165,6 +167,23 @@ window.READING = {
           why:"The book your 'selfishgene.txt' argues against. Read the original to sharpen your 'see evolution from consciousness, not the gene' counter." },
         { t:"The Feeling of What Happens", who:"Antonio Damasio", type:"book", url:"https://en.wikipedia.org/wiki/Antonio_Damasio",
           why:"On how the body maps itself into feeling and self — the neuroscience of your 'sensations are the doorway' chapter." }
+      ]
+    },
+    {
+      key: "open",
+      name: "Open Protocols & Open Commerce",
+      blurb: "Breaking the algorithmic hold — ONDC, Nama Yatri, the gift economy in code.",
+      items: [
+        { t:"ONDC — Open Network for Digital Commerce", who:"Govt. of India / ONDC", type:"article", fromNotes:true, url:"https://www.ondc.org",
+          why:"You referenced this in the Jan 2026 memo as 'like NOSTR, but for commerce.' The actual protocol spec — read how an open, multi-vendor market can displace a monopoly platform." },
+        { t:"Nama Yatri — the open ride-hailing app", who:"Juspay / ONDC", type:"article", fromNotes:true, url:"https://namayatri.in",
+          why:"The case study you named: an ONDC-based ride app that disrupted Uber and Ola in Bangalore by letting drivers keep 100% of the fare. The closest real-world analogue to your zero-profit thesis in code." },
+        { t:"UPI — Unified Payments Interface", who:"NPCI", type:"article", fromNotes:true, url:"https://www.npci.org.in/what-we-do/upi/product-overview",
+          why:"You noted UPI 'broke the monopoly of banks.' Free, instant, bank-to-bank rails — proof that a public protocol can out-compete private rent-extracting ones." },
+        { t:"The Protocol Pattern (essay)", who:"Mike Masnick", type:"article", url:"https://knightcolumbia.org/content/protocols-not-platforms-a-historical-approach-to-the-internet",
+          why:"'Protocols, not platforms' — the argument for NOSTR, email, RSS-style open layers over walled gardens. The structural case behind your distaste for siloed data." },
+        { t:"The Internet Con", who:"Cory Doctorow", type:"book", url:"https://en.wikipedia.org/wiki/The_Internet_Con",
+          why:"On 'enshittification' — how platforms decay from useful to extractive. Names precisely the algorithmic hold you want open protocols to break." }
       ]
     }
   ]
