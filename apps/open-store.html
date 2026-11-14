@@ -3,31 +3,37 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>The Open Store — a zero-profit game</title>
+<title>The Open Store — a town, three shops, two years</title>
 <link rel="stylesheet" href="shared.css" />
 <style>
-  .viz-root{--series-you:#199e70;--series-super:#3987e5;--series-coop:#d95926;--grid:#2a313c;--text-2:#b6bec8}
-  .levers{display:grid;gap:14px}
-  .lever h3{margin:0 0 6px;font-size:15px}
-  .seg{display:flex;flex-wrap:wrap;gap:8px}
-  .seg button{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);font-weight:500;text-align:left}
-  .seg button[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-  .seg small{display:block;color:var(--dim);font-weight:400;font-size:12px}
-  .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-  .stat .box{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px}
-  .stat .n{font-size:20px;font-weight:700}
-  .stat .l{color:var(--dim);font-size:12px}
-  .month-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
-  .month-head h2{margin:0;font-size:20px}
-  .event{border-left:3px solid var(--warn);padding:6px 12px;margin:12px 0;background:var(--panel-2);border-radius:0 8px 8px 0}
-  .ledger{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
-  .ledger td{padding:4px 0;border-bottom:1px solid var(--line)}
-  .ledger td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-  .ledger tr.total td{font-weight:700;border-bottom:0}
-  .receipt{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;background:#f6f3ea;color:#22201b;border-radius:6px;padding:14px 16px;max-width:300px;margin:14px auto 0;box-shadow:0 6px 18px rgba(0,0,0,.35)}
-  .receipt hr{border:0;border-top:1px dashed #9a958a;margin:8px 0}
-  .receipt .back{display:block;margin:0;color:#22201b;font-size:13px;font-weight:700}
-  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .viz-root{--open:#199e70;--super:#3987e5;--coop:#d95926;--grid:#2a313c;--text-2:#b6bec8}
+  .app{max-width:980px}
+  .hud{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .hud h2{margin:0;font-size:20px}
+  .hud .speed{display:flex;gap:6px}
+  .speed button,.seg button{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);font-weight:500}
+  .speed button[aria-pressed=true],.seg button[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .stage{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#20301f}
+  canvas#town{display:block;width:100%;height:auto;image-rendering:auto}
+  .decision{position:absolute;inset:0;background:rgba(8,11,15,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+  .decision[hidden]{display:none}
+  .decision .card{background:var(--panel);border:1px solid var(--warn);border-radius:12px;padding:20px;max-width:440px}
+  .decision h3{margin:0 0 6px}
+  .decision .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .stores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+  .store{background:var(--panel);border:1px solid var(--line);border-top:3px solid;border-radius:10px;padding:12px}
+  .store h3{margin:0 0 6px;font-size:15px}
+  .store dl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:0;font-size:13px}
+  .store dt{color:var(--dim)} .store dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+  .store.closed{opacity:.5}
+  .levers{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .lever h3{margin:0 0 2px;font-size:14px}
+  .lever p{margin:0 0 6px;color:var(--dim);font-size:12px}
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button{padding:7px 10px;font-size:13px}
+  .seg button:disabled{opacity:.4;cursor:default}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .slider label{display:flex;justify-content:space-between;gap:10px;margin:10px 0 0;color:var(--ink);font-size:13px}
   .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-2);margin:6px 0 2px}
   .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
   .chart-wrap{position:relative}
@@ -35,222 +41,352 @@
   .tip{position:absolute;pointer-events:none;background:#0b0e12;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;min-width:150px}
   .tip b{display:block;margin-bottom:4px}
   .tip div{display:flex;justify-content:space-between;gap:12px}
-  .assume label{display:flex;justify-content:space-between;gap:10px;margin:12px 0 2px;color:var(--ink)}
-  .assume input[type=range]{width:100%;accent-color:var(--accent)}
   table.data{width:100%;border-collapse:collapse;font-size:13px}
   table.data th,table.data td{padding:4px 6px;text-align:right;border-bottom:1px solid var(--line)}
   table.data th:first-child,table.data td:first-child{text-align:left}
   summary{cursor:pointer;color:var(--dim);font-size:14px}
+  .sources li{margin:8px 0;font-size:13px}
+  .sources .why{color:var(--dim)}
+  .news{font-size:13px;color:var(--text-2);min-height:20px;margin-top:8px}
+  @media (max-width:640px){.stores{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <section class="app viz-root">
   <a class="back" href="../index.html">← Hub</a>
   <h1>🚪 The Open Store</h1>
-  <p class="sub">Run a neighbourhood grocery store for a year. Three decisions: who may walk in, who does the work, and what happens to the money left over.</p>
+  <p class="sub">A town of 400 households, three grocery shops, two years. You run the green one: open door, voluntary help, and whatever is left over goes back to the shoppers. Watch who walks where.</p>
 
-  <div class="panel">
+  <div class="hud">
+    <h2 id="clock">January, year 1</h2>
+    <div class="speed" role="group" aria-label="Speed">
+      <button type="button" id="pause" aria-pressed="false">⏸ Pause</button>
+      <button type="button" id="play" aria-pressed="true">▶ Play</button>
+      <button type="button" id="fast" aria-pressed="false">⏩ Fast</button>
+      <button type="button" id="restart" class="ghost">New town</button>
+    </div>
+  </div>
+  <div class="stage">
+    <canvas id="town" width="960" height="620" role="img" aria-label="The town: houses coloured by the shop they use, and people walking to the shops"></canvas>
+    <div class="decision" id="decision" hidden><div class="card"><h3 id="decisionTitle"></h3><p id="decisionText" style="margin:0"></p><div class="actions" id="decisionActions"></div></div></div>
+  </div>
+  <div class="news" id="news" aria-live="polite"></div>
+  <div class="stores" id="stores"></div>
+
+  <div class="panel" style="margin-top:16px">
+    <h2 style="margin:0 0 4px;font-size:17px">Your store's rules</h2>
+    <p class="muted" style="margin:0 0 12px">Change them any time; they apply from next month. Each one is built on a finding from the research listed below.</p>
     <div class="levers" id="levers"></div>
   </div>
 
-  <div class="panel" id="monthPanel">
-    <div class="month-head"><h2 id="monthTitle"></h2><span class="pill" id="monthPill"></span></div>
-    <div id="eventBox"></div>
-    <div class="stat" id="monthStats"></div>
-    <table class="ledger" id="ledger"></table>
-    <div class="receipt" id="receipt"></div>
-    <div class="actions" id="actions"></div>
+  <div class="panel">
+    <h2 style="margin:0 0 2px;font-size:17px">Households shopping at each store</h2>
+    <div class="legend" id="legend"></div>
+    <div class="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 720 280" role="img" aria-label="Households shopping at each store, month by month"></svg><div class="tip" id="tip" hidden></div></div>
+    <details style="margin-top:10px"><summary>The numbers as a table</summary><div style="overflow-x:auto"><table class="data" id="table"></table></div></details>
   </div>
 
   <div class="panel">
-    <h2 style="margin:0 0 2px;font-size:17px">Households shopping at the store</h2>
-    <p class="muted" style="margin:0">Your store so far, beside a supermarket and a member co-op living through the same year.</p>
-    <div class="legend" id="legend"></div>
-    <div class="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 720 300" role="img" aria-label="Households shopping at each store, month by month"></svg><div class="tip" id="tip" hidden></div></div>
-    <div class="stat" id="yearStats" style="margin-top:12px"></div>
-    <details style="margin-top:12px"><summary>The numbers as a table</summary><div style="overflow-x:auto"><table class="data" id="table"></table></div></details>
+    <h2 style="margin:0 0 4px;font-size:17px">The town itself: what would have to be true?</h2>
+    <p class="muted" style="margin:0">This is a model, not a forecast. These are the beliefs about people and about the supermarket that decide whether an open store works. Move them to where you think they are; the town starts over.</p>
+    <div id="world"></div>
+    <div class="row" style="margin-top:12px"><button type="button" class="ghost" id="doubter">A doubter's town</button><button type="button" class="ghost" id="reset">Back to the research numbers</button></div>
   </div>
 
-  <div class="panel assume">
-    <h2 style="margin:0 0 4px;font-size:17px">What would have to be true?</h2>
-    <p class="muted" style="margin:0">This is a model, not a forecast. The open store leans on two beliefs. Move them to where you actually think they are, and see whether the store still works.</p>
-    <div id="sliders"></div>
-    <div class="actions"><button class="ghost" id="skeptic">Use a doubter's numbers</button><button class="ghost" id="defaults">Back to the starting numbers</button></div>
-    <p class="muted" style="margin-bottom:0">Everything else is fixed and written down in <a href="open-store-model.js">the model</a>: 400 households spending €220 a month, shelf prices 25% above cost, €9,000 of fixed costs, 3% lost to energy and spoilage, €16 an hour for work nobody volunteers for. A broken freezer in March, a shortage in June, a discount chain in September.</p>
+  <div class="panel">
+    <h2 style="margin:0 0 4px;font-size:17px">Where the numbers come from</h2>
+    <ul class="clean sources" id="sources"></ul>
+    <p class="muted" style="margin-bottom:0">Everything else is an assumption written down in <a href="town-model.js">the model</a>: a €170 monthly basket at wholesale cost, 1.3 hours of shop work per household, €16 an hour, rent and core staff of €3,400 to €3,900 a month, and a supermarket chain that buys 5% cheaper, is handier, and cuts prices when it loses shoppers. Applying lab and field findings to a grocery store is itself an assumption.</p>
   </div>
 </section>
 
-<script src="open-store-model.js"></script>
+<script src="town-model.js"></script>
 <script>
-const { simulate, PRESETS, SKEPTIC, DEFAULTS, MONTHS } = window.OpenStore;
+const T = window.Town;
 const $ = id => document.getElementById(id);
 const el = (tag, props, ...kids) => {
   const n = document.createElement(tag);
-  for (const [k, v] of Object.entries(props || {})) { if (k === 'class') n.className = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v); }
-  for (const k of kids) n.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  for (const [k, v] of Object.entries(props || {})) { if (v == null || v === false) continue; if (k === 'class') n.className = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }
+  for (const k of kids) if (k != null && k !== '') n.append(k instanceof Node ? k : document.createTextNode(String(k)));
   return n;
 };
 const svg = (tag, attrs, text) => { const n = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, v); if (text != null) n.textContent = text; return n; };
 const euro = n => (n < 0 ? '−' : '') + '€' + Math.abs(Math.round(n)).toLocaleString('en');
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const COLOR = { open: '#199e70', super: '#3987e5', coop: '#d95926' };
+const NAME = { open: 'Your open store', super: 'Supermarket', coop: 'Member co-op' };
 
+// ---------- game state ----------
+const game = { seed: 1, world: {}, open: {}, town: null, speed: 1, clock: 0, walkers: [], floats: [], answered: {}, over: false };
+function newTown() {
+  game.town = T.createTown({ seed: game.seed, world: game.world, open: game.open });
+  Object.assign(game, { clock: 0, walkers: [], floats: [], answered: {}, over: false });
+  $('decision').hidden = true;
+  $('news').textContent = 'A new town. Houses wear the colour of the shop they use.';
+  drawAll();
+}
+const openStore = () => game.town.stores.open;
+function setLever(key, value) { game.open[key] = value; openStore()[key] = value; drawLevers(); }
+
+// ---------- the month turns ----------
+const DECISIONS = {
+  6: { key: 'shortage', title: 'A shortage: everyone wants flour and oil', text: 'The supermarket is putting its prices up 15% this month. In surveys, 82% of people call that unfair. What does your store do?', options: [['hold', 'Hold prices'], ['raise', 'Raise prices 15%']] },
+  9: { key: 'costRise', title: 'Wholesale prices rise 6%', text: 'For good. People accept a shop passing on a real cost. Absorbing it keeps your prices lower and eats your surplus.', options: [['pass', 'Pass it on'], ['absorb', 'Absorb it']] },
+};
+function nextMonth() {
+  const town = game.town, upcoming = town.month + 1;
+  if (upcoming > town.world.months) { game.over = true; return finish(); }
+  const d = DECISIONS[upcoming];
+  if (d && !game.answered[upcoming]) return ask(upcoming, d);
+  const report = T.step(town);
+  const event = T.EVENTS[report.month];
+  const mine = report.stores.open;
+  const lines = [];
+  if (event) lines.push(event.title + '.');
+  if (mine) {
+    if (mine.claimed > 0) { lines.push(euro(mine.claimed) + ' went back to your shoppers.'); float('open', '+' + euro(mine.claimed) + ' back', '#7ee787'); }
+    else if (mine.surplus < 0) { lines.push('Your store lost ' + euro(-mine.surplus) + ' this month.'); float('open', euro(mine.surplus), '#f0883e'); }
+  }
+  for (const k of T.STORE_KEYS) if (town.closed[k] === report.month) lines.push(NAME[k] + ' ran out of money and closed.');
+  if (report.month === 6 && town.stores.super.shortage === 'raise') float('super', 'prices +15%', '#f0883e');
+  $('news').textContent = lines.join(' ');
+  drawAll();
+}
+function ask(month, d) {
+  $('decisionTitle').textContent = d.title; $('decisionText').textContent = d.text;
+  $('decisionActions').replaceChildren(...d.options.map(([value, label], i) => el('button', { type: 'button', class: i ? 'ghost' : '', onclick: () => {
+    setLever(d.key, value); game.answered[month] = true; $('decision').hidden = true; nextMonth();
+  } }, label)));
+  $('decision').hidden = false;
+}
+function finish() {
+  const s = T.summary(game.town), mine = s.open;
+  $('decisionTitle').textContent = mine.closed ? 'Your store closed in month ' + mine.closed : 'Two years on';
+  $('decisionText').textContent = mine.closed
+    ? 'It ran out of money. Look at which rule or which belief about the town made the difference, and try again.'
+    : mine.shoppers + ' of 400 households shop with you. ' + euro(mine.returned) + ' went back to shoppers. A month of groceries now costs about ' + euro(mine.netBasket) + ' with you, ' + euro(s.super.netBasket) + ' at the supermarket and ' + euro(s.coop.netBasket) + ' at the co-op. Volunteers do ' + Math.round(mine.coverage * 100) + '% of the work.';
+  $('decisionActions').replaceChildren(
+    el('button', { type: 'button', onclick: () => newTown() }, 'Same town again'),
+    el('button', { type: 'button', class: 'ghost', onclick: () => { game.seed++; newTown(); } }, 'A different town'));
+  $('decision').hidden = false;
+}
+
+// ---------- the town on canvas ----------
+const canvas = $('town'), ctx = canvas.getContext('2d');
+const SX = canvas.width / 100, SY = canvas.height / 74;
+const px = p => [p.x * SX, p.y * SY];
+function float(store, text, color) { const [x, y] = px(T.PLACES[store]); game.floats.push({ x, y: y - 46, text, color, life: 1 }); }
+
+function spawnWalker() {
+  const town = game.town, h = town.households[Math.floor(Math.random() * town.households.length)];
+  if (!h.store || town.closed[h.store]) return;
+  const helper = h.store === 'open' && h.helped && openStore().work === 'voluntary';
+  const member = town.stores[h.store].work === 'mandatory' && Math.random() < 0.3;
+  game.walkers.push({ h, store: h.store, t: 0, works: helper || member, wait: 0 });
+}
+function tick(dt) {
+  if (game.speed > 0 && $('decision').hidden && !game.over) {
+    game.clock += dt * game.speed;
+    const monthLength = 5.5;
+    if (game.clock >= monthLength) { game.clock = 0; nextMonth(); }
+    const want = 70;
+    if (game.walkers.length < want && Math.random() < 0.5 * game.speed) spawnWalker();
+    for (const w of game.walkers) {
+      // Out to the shop, a pause inside (longer for those who work a shift), and home again.
+      if (w.t < 1) w.t += dt * 0.5 * game.speed;
+      else if (w.wait < (w.works ? 2.2 : 0.5)) w.wait += dt * game.speed;
+      else w.t += dt * 0.5 * game.speed;
+    }
+    game.walkers = game.walkers.filter(w => w.t < 2);
+  }
+  for (const f of game.floats) { f.life -= dt * 0.35; f.y -= dt * 14; }
+  game.floats = game.floats.filter(f => f.life > 0);
+}
+// Trees and grass tufts: decoration only, the same every time.
+const SCENERY = (() => { const r = T.createTown({ seed: 99 }).random, out = []; for (let i = 0; i < 70; i++) out.push({ x: r() * 100, y: r() * 74, tree: r() < 0.45, size: 0.7 + r() * 0.6 }); return out; })();
+function drawTown(now) {
+  const town = game.town;
+  ctx.fillStyle = '#4a7a43'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (const t of SCENERY) if (!t.tree) { const [x, y] = px(t); ctx.fillStyle = '#44723e'; ctx.beginPath(); ctx.ellipse(x, y, 26 * t.size, 12 * t.size, 0, 0, 6.3); ctx.fill(); }
+  // Lanes from the square in the middle of town to each shop.
+  const hub = [50 * SX, 42 * SY];
+  for (const [width, colour] of [[20, '#b9a77c'], [15, '#d6c697']]) {
+    ctx.strokeStyle = colour; ctx.lineWidth = width; ctx.lineCap = 'round';
+    for (const k of T.STORE_KEYS) { const [x, y] = px(T.PLACES[k]); ctx.beginPath(); ctx.moveTo(hub[0], hub[1]); ctx.lineTo(x, y + 20); ctx.stroke(); }
+  }
+  ctx.fillStyle = '#d6c697'; ctx.beginPath(); ctx.arc(hub[0], hub[1], 20, 0, 6.3); ctx.fill();
+  ctx.fillStyle = '#7fb3d5'; ctx.beginPath(); ctx.arc(hub[0], hub[1], 8, 0, 6.3); ctx.fill();   // the fountain
+  for (const t of SCENERY) if (t.tree) { const [x, y] = px(t); ctx.fillStyle = '#5b4026'; ctx.fillRect(x - 1.5, y, 3, 7); ctx.fillStyle = '#2f5d2c'; ctx.beginPath(); ctx.arc(x, y - 3, 8 * t.size, 0, 6.3); ctx.fill(); ctx.fillStyle = '#3b7037'; ctx.beginPath(); ctx.arc(x - 2, y - 5, 5 * t.size, 0, 6.3); ctx.fill(); }
+  // Houses: the roof wears the colour of the household's shop.
+  for (const h of town.households) {
+    const [x, y] = px(h);
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x - 5, y + 4, 12, 3);
+    ctx.fillStyle = '#efe7d6'; ctx.fillRect(x - 6, y - 4, 12, 9);
+    ctx.fillStyle = '#6b5a45'; ctx.fillRect(x - 1.5, y, 3, 5);
+    ctx.fillStyle = h.store && !town.closed[h.store] ? COLOR[h.store] : '#77736c';
+    ctx.beginPath(); ctx.moveTo(x - 8, y - 4); ctx.lineTo(x, y - 11); ctx.lineTo(x + 8, y - 4); ctx.closePath(); ctx.fill();
+  }
+  // Shops.
+  for (const k of T.STORE_KEYS) {
+    const [x, y] = px(T.PLACES[k]), closed = town.closed[k], last = town.books[k].history[town.books[k].history.length - 1];
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(x - 46, y + 20, 96, 6);
+    ctx.fillStyle = closed ? '#6a6a6a' : '#f6f0e1'; ctx.fillRect(x - 48, y - 22, 96, 44);
+    ctx.fillStyle = closed ? '#888' : COLOR[k]; ctx.fillRect(x - 52, y - 36, 104, 16);
+    for (let i = 0; i < 6 && !closed; i++) { ctx.fillStyle = i % 2 ? '#ffffff' : COLOR[k]; ctx.fillRect(x - 48 + i * 16, y - 20, 16, 7); }   // the awning
+    ctx.fillStyle = '#3a2f25'; ctx.fillRect(x - 8, y - 2, 16, 24);
+    ctx.fillStyle = '#9fd0e8'; ctx.fillRect(x - 40, y - 6, 24, 16); ctx.fillRect(x + 16, y - 6, 24, 16);
+    if (store(k).door === 'members' && !closed) { ctx.fillStyle = '#3a2f25'; ctx.fillRect(x - 14, y + 6, 3, 16); ctx.fillStyle = '#f0883e'; ctx.fillRect(x - 16, y + 3, 7, 4); }   // the card check
+    ctx.fillStyle = '#fff'; ctx.font = '700 11px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(closed ? 'CLOSED' : NAME[k].toUpperCase(), x, y - 24);
+    if (!closed) {
+      ctx.fillStyle = 'rgba(8,11,15,.8)'; ctx.fillRect(x - 46, y + 28, 92, 17);
+      ctx.fillStyle = '#e6edf3'; ctx.font = '12px system-ui, sans-serif';
+      ctx.fillText((last ? last.shoppers : town.households.filter(h => h.store === k).length) + ' households', x, y + 41);
+    }
+  }
+  // People, nearest last so they overlap properly.
+  const people = game.walkers.map(w => {
+    const [hx, hy] = px(w.h), [sx, sy] = px(T.PLACES[w.store]);
+    const f = w.t <= 1 ? w.t : 2 - w.t, ease = f * f * (3 - 2 * f), moving = w.t < 1 || w.wait >= (w.works ? 2.2 : 0.5);
+    return { w, x: hx + (sx - hx) * ease, y: hy + (sy + 24 - hy) * ease, step: moving ? Math.sin(now / 80 + w.h.id) : 0 };
+  }).sort((a, b) => a.y - b.y);
+  for (const { w, x, y, step } of people) {
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(x, y + 7, 4, 1.6, 0, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#34495e'; ctx.fillRect(x - 2.5, y + 2, 2, 5 + step); ctx.fillRect(x + 0.5, y + 2, 2, 5 - step);     // legs
+    ctx.fillStyle = w.works ? '#7ee787' : ['#e9c46a', '#e76f51', '#cdb4db', '#a8dadc'][w.h.id % 4]; ctx.fillRect(x - 3, y - 5, 6, 8);   // helpers wear a green apron
+    ctx.fillStyle = '#f4d7b5'; ctx.beginPath(); ctx.arc(x, y - 8, 3.2, 0, 6.3); ctx.fill();
+    if (w.t > 1) { ctx.fillStyle = COLOR[w.store]; ctx.fillRect(x + 3, y - 1, 4, 5); }            // a shopping bag on the way home
+  }
+  for (const f of game.floats) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, f.life * 2)); ctx.font = '700 15px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,11,15,.8)'; ctx.strokeText(f.text, f.x, f.y); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y); ctx.globalAlpha = 1;
+  }
+}
+const store = k => game.town.stores[k];
+let lastFrame = 0;
+function frame(now) {
+  const dt = Math.min(0.1, (now - lastFrame) / 1000 || 0); lastFrame = now;
+  tick(dt); drawTown(now);
+  requestAnimationFrame(frame);
+}
+
+// ---------- panels ----------
+function drawClock() {
+  const m = game.town.month;
+  $('clock').textContent = m === 0 ? 'Before opening day' : MONTHS[(m - 1) % 12] + ', year ' + (Math.floor((m - 1) / 12) + 1);
+}
+function drawStores() {
+  const town = game.town;
+  $('stores').replaceChildren(...T.STORE_KEYS.map(k => {
+    const book = town.books[k], last = book.history[book.history.length - 1], closed = town.closed[k];
+    const rows = closed ? [['Closed in month', closed]] : last ? [
+      ['Households', last.shoppers],
+      ['A month of groceries', euro(last.price)],
+      [k === 'open' ? 'Came back this month' : 'Left over this month', euro(k === 'open' ? last.claimed : last.surplus)],
+      ['Work done unpaid', Math.round(100 * last.hours / Math.max(1, last.hoursNeeded)) + '%'],
+      ['In the bank', euro(last.reserve)],
+    ] : [['Households', town.households.filter(h => h.store === k).length], ['In the bank', euro(book.reserve)]];
+    return el('div', { class: 'store' + (closed ? ' closed' : ''), style: 'border-top-color:' + COLOR[k] },
+      el('h3', {}, NAME[k]), el('dl', {}, ...rows.flatMap(([l, v]) => [el('dt', {}, l), el('dd', {}, v)])));
+  }));
+}
 const LEVERS = [
-  { key: 'door', title: 'The door', options: [
-    ['open', 'Open to anyone', 'Walk in like any shop'],
-    ['members', 'Members only', 'A €100 share and a card check'] ] },
-  { key: 'help', title: 'The work', options: [
-    ['voluntary', 'Whoever wants to help', 'Paid staff cover the rest'],
-    ['mandatory', 'Three hours a month, or no entry', 'Every member works'],
-    ['paid', 'Paid staff only', 'Nobody is asked'] ] },
-  { key: 'surplus', title: 'The money left over', options: [
-    ['refund', 'Give it back on receipts', 'After a repair fund'],
-    ['keep', 'The store keeps it', 'Reserves, growth or owners'] ] },
+  { key: 'door', title: 'The door', why: 'A joining fee and a card check keep the curious out.', options: [['open', 'Open to anyone'], ['members', 'Members only (€100)']] },
+  { key: 'work', title: 'The work', why: 'Half of people help only as much as they see others help; a third never do.', options: [['voluntary', 'Whoever wants to'], ['mandatory', '2 hours a month, compulsory'], ['paid', 'Paid staff only']] },
+  { key: 'thanks', title: 'Thanking volunteers', why: 'A small payment can make people help less than no payment.', options: [['none', 'A thank-you'], ['token', 'A €5 voucher']], only: s => s.work === 'voluntary' },
+  { key: 'surplus', title: 'The money left over', why: 'A gift makes people give back. But a third of receipt refunds are never claimed.', options: [['receipt', 'Back on receipts'], ['till', 'Back at the till, automatically'], ['keep', 'The store keeps it']] },
+  { key: 'books', title: 'The books', why: 'Showing what things cost made people 21% more likely to buy.', options: [[false, 'Private'], [true, 'Pinned to the door']] },
 ];
-
-const state = { levers: { ...PRESETS.open.levers }, assumptions: {}, choices: {}, month: 1 };
-const run = () => simulate(state.levers, state.assumptions, state.choices);
-const reference = key => simulate(PRESETS[key].levers, state.assumptions, PRESETS[key].choices);
-
 function drawLevers() {
-  $('levers').replaceChildren(...LEVERS.map(l => el('div', { class: 'lever' },
-    el('h3', {}, l.title),
-    el('div', { class: 'seg', role: 'group', 'aria-label': l.title }, ...l.options.map(([value, label, hint]) =>
-      el('button', { type: 'button', 'aria-pressed': String(state.levers[l.key] === value),
-        onclick: () => { state.levers[l.key] = value; draw(); } }, label, el('small', {}, hint)))))));
+  const s = openStore();
+  const levers = LEVERS.map(l => {
+    const disabled = l.only && !l.only(s);
+    return el('div', { class: 'lever' }, el('h3', {}, l.title), el('p', {}, l.why),
+      el('div', { class: 'seg', role: 'group', 'aria-label': l.title }, ...l.options.map(([value, label]) =>
+        el('button', { type: 'button', disabled, 'aria-pressed': String(s[l.key] === value), onclick: () => setLever(l.key, value) }, label))));
+  });
+  const out = el('span', {}, Math.round(s.markup * 100) + '% over cost');
+  const markup = el('div', { class: 'lever slider' }, el('h3', {}, 'Shelf prices'), el('p', {}, 'The supermarket adds 36%, the co-op 25%. Too little and the rent cannot be paid.'),
+    el('label', {}, el('span', {}, 'Your markup'), out),
+    el('input', { type: 'range', min: 0.15, max: 0.40, step: 0.01, value: s.markup, 'aria-label': 'Your markup', oninput: e => { game.open.markup = openStore().markup = Number(e.target.value); out.textContent = Math.round(Number(e.target.value) * 100) + '% over cost'; } }));
+  $('levers').replaceChildren(...levers, markup);
 }
 
-function drawMonth(result) {
-  const m = result.months[state.month - 1];
-  const waiting = state.month === 6 && !state.choices[6];
-  $('monthTitle').textContent = MONTH_NAMES[state.month - 1];
-  $('monthPill').textContent = 'Month ' + state.month + ' of ' + MONTHS;
-  const box = $('eventBox'); box.replaceChildren();
-  if (m.event) box.append(el('div', { class: 'event' }, el('b', {}, m.event + '. '),
-    waiting ? 'Shelves are emptying. Other shops have put prices up 15%. What does yours do?' : m.notes.join(' ')));
-  const helpers = m.hoursNeeded ? Math.round(100 * m.volunteerHours / m.hoursNeeded) : 0;
-  $('monthStats').replaceChildren(
-    stat(m.shoppers.toLocaleString('en'), 'households shopping'),
-    stat(helpers + '%', 'of the work done by volunteers'),
-    stat(Math.round(m.trust * 100) + ' / 100', 'trust in the store'),
-    stat(euro(m.reserve), 'in the reserve'));
-  const row = (label, value, cls) => el('tr', cls ? { class: cls } : {}, el('td', {}, label), el('td', {}, value));
-  $('ledger').replaceChildren(
-    row('Sales', euro(m.sales)),
-    row('Goods', euro(-m.goods)),
-    row('Rent and core team', euro(-m.fixed)),
-    row('Energy and spoilage', euro(-m.overhead)),
-    row('Paid hours nobody volunteered for', euro(-m.paidLabour)),
-    m.interest ? row('Interest on money borrowed', euro(-m.interest)) : '',
-    row('Left over this month', euro(m.surplus), 'total'),
-    m.refund ? row('Given back to shoppers', euro(m.refund)) : '',
-    row(m.kept >= 0 ? 'Kept by the store' : 'Taken from the reserve', euro(Math.abs(m.kept))));
-  const basket = 62.4;
-  $('receipt').replaceChildren(
-    el('div', {}, 'YOUR NEIGHBOURHOOD STORE'), el('hr'),
-    el('div', {}, 'Bread, oats, apples, oil …'), el('div', {}, 'TOTAL            €' + basket.toFixed(2)), el('hr'),
-    m.refund > 0
-      ? el('p', { class: 'back' }, 'Bring this receipt back next month: €' + (basket * m.refundRate).toFixed(2) + ' is yours (' + (m.refundRate * 100).toFixed(1) + '% of this receipt).')
-      : el('div', {}, state.levers.surplus === 'refund' ? 'Nothing was left over this month.' : 'Thank you for shopping with us.'));
-  const actions = $('actions'); actions.replaceChildren();
-  if (waiting) {
-    actions.append(
-      el('button', { type: 'button', onclick: () => { state.choices[6] = 'hold'; draw(); } }, 'Hold prices'),
-      el('button', { type: 'button', class: 'ghost', onclick: () => { state.choices[6] = 'raise'; draw(); } }, 'Raise prices 15%'));
-  } else if (state.month < MONTHS) {
-    actions.append(
-      el('button', { type: 'button', id: 'next', onclick: () => { state.month++; draw(); } }, 'Next month →'),
-      el('button', { type: 'button', class: 'ghost', onclick: () => { state.choices[6] = state.choices[6] || 'hold'; state.month = MONTHS; draw(); } }, 'Skip to December'));
-  } else {
-    actions.append(el('button', { type: 'button', onclick: () => { state.month = 1; state.choices = {}; draw(); } }, 'Play the year again'));
-  }
-}
-const stat = (n, l) => el('div', { class: 'box' }, el('div', { class: 'n' }, n), el('div', { class: 'l' }, l));
-
-const SERIES = [
-  { key: 'you', name: 'Your store', color: 'var(--series-you)' },
-  { key: 'supermarket', name: 'Supermarket', color: 'var(--series-super)' },
-  { key: 'coop', name: 'Member co-op', color: 'var(--series-coop)' },
+const WORLD_SLIDERS = [
+  { key: 'freeRiderShare', label: 'People who never help, whatever others do', min: 0.1, max: 0.7, step: 0.01, show: v => Math.round(v * 100) + '%' },
+  { key: 'priceSensitivity', label: 'How strongly the town reacts to prices', min: 0.27, max: 0.81, step: 0.01, show: v => v.toFixed(2) },
+  { key: 'fairnessShare', label: 'People who punish a shop for raising prices in a shortage', min: 0, max: 1, step: 0.01, show: v => Math.round(v * 100) + '%' },
+  { key: 'redemption', label: 'Receipt refunds that are actually claimed', min: 0.3, max: 1, step: 0.01, show: v => Math.round(v * 100) + '%' },
+  { key: 'chainAdvantage', label: 'How much cheaper the supermarket chain buys', min: 0, max: 0.15, step: 0.01, show: v => Math.round(v * 100) + '%' },
+  { key: 'convenience', label: 'Pull of the supermarket\'s hours and range', min: 0, max: 1.2, step: 0.05, show: v => v < 0.2 ? 'none' : v < 0.6 ? 'some' : v < 0.95 ? 'strong' : 'very strong' },
 ];
-
-function drawChart(result) {
-  const shown = state.month;
-  const data = { you: result.months.slice(0, shown).map(m => m.shoppers), supermarket: reference('supermarket').months.map(m => m.shoppers), coop: reference('coop').months.map(m => m.shoppers) };
-  const W = 720, H = 300, L = 44, R = 136, T = 14, B = 30;
-  const all = [...data.you, ...data.supermarket, ...data.coop];
-  const lo = Math.floor(Math.min(...all) / 50) * 50, hi = Math.max(lo + 100, Math.ceil(Math.max(...all) / 50) * 50);
-  const x = i => L + (W - L - R) * i / (MONTHS - 1), y = v => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
-  const chart = $('chart'); chart.replaceChildren();
-  for (let t = 0; t <= 4; t++) {
-    const v = lo + (hi - lo) * t / 4;
-    chart.append(svg('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: 'var(--grid)', 'stroke-width': 1 }),
-      svg('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--dim)' }, Math.round(v)));
-  }
-  for (let i = 0; i < MONTHS; i += 1) chart.append(svg('text', { x: x(i), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--dim)' }, MONTH_NAMES[i].slice(0, 3)));
-  // Direct labels at the line ends, nudged apart when two lines finish close together.
-  const ends = SERIES.map(s => ({ s, v: data[s.key][data[s.key].length - 1], i: data[s.key].length - 1 })).sort((a, b) => b.v - a.v);
-  let lastY = -99;
-  for (const e of ends) { e.ly = Math.max(y(e.v) + 4, lastY + 14); lastY = e.ly; }
-  for (const s of SERIES) {
-    const pts = data[s.key];
-    chart.append(svg('polyline', { points: pts.map((v, i) => x(i) + ',' + y(v)).join(' '), fill: 'none', stroke: s.color, 'stroke-width': s.key === 'you' ? 3 : 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-    const e = ends.find(e => e.s === s);
-    chart.append(svg('circle', { cx: x(e.i), cy: y(e.v), r: 4, fill: s.color, stroke: 'var(--panel)', 'stroke-width': 2 }),
-      svg('text', { x: x(e.i) + 10, y: e.i < MONTHS - 1 ? y(e.v) - 8 : e.ly, 'font-size': 12, fill: 'var(--text-2)' }, s.name + ' ' + e.v));
-  }
-  $('legend').replaceChildren(...SERIES.map(s => el('span', {}, el('i', { style: 'background:' + s.color }), s.name)));
-
-  // Hover: a crosshair and one tooltip for all three stores in that month.
-  const cross = svg('line', { y1: T, y2: H - B, stroke: 'var(--dim)', 'stroke-width': 1, 'stroke-dasharray': '3 3', visibility: 'hidden' });
-  const hit = svg('rect', { x: L, y: T, width: W - L - R, height: H - T - B, fill: 'transparent' });
-  chart.append(cross, hit);
-  const tip = $('tip');
-  const move = ev => {
-    const box = chart.getBoundingClientRect(), px = (ev.clientX - box.left) * W / box.width;
-    const i = Math.max(0, Math.min(MONTHS - 1, Math.round((px - L) / ((W - L - R) / (MONTHS - 1)))));
-    cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
-    tip.replaceChildren(el('b', {}, MONTH_NAMES[i]), ...SERIES.map(s => el('div', {}, el('span', {}, el('i', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:' + s.color }), s.name),
-      el('span', {}, data[s.key][i] == null ? 'not yet' : data[s.key][i]))));
-    tip.hidden = false;
-    const left = x(i) * box.width / W;
-    tip.style.left = Math.min(box.width - 170, left + 12) + 'px'; tip.style.top = '8px';
-  };
-  hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move);
-  hit.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
-
-  $('table').replaceChildren(
-    el('tr', {}, el('th', {}, 'Month'), ...SERIES.map(s => el('th', {}, s.name))),
-    ...MONTH_NAMES.map((name, i) => el('tr', {}, el('td', {}, name), ...SERIES.map(s => el('td', {}, data[s.key][i] == null ? '' : data[s.key][i])))));
-}
-
-function drawYear(result) {
-  const upTo = result.months.slice(0, state.month);
-  const sum = key => upTo.reduce((t, m) => t + m[key], 0);
-  $('yearStats').replaceChildren(
-    stat(euro(sum('refund')), 'given back to shoppers so far'),
-    stat(Math.round(sum('volunteerHours')).toLocaleString('en') + ' h', 'given by volunteers'),
-    stat(euro(sum('paidLabour')), 'paid for uncovered hours'),
-    stat(euro(Math.min(...upTo.map(m => m.reserve))), 'lowest the reserve fell'));
-}
-
-const SLIDERS = [
-  { key: 'refundTrust', label: 'When 5% comes back on a receipt, trust in the store rises by', min: 0, max: 1, step: 0.05, show: v => '+' + (v * 5).toFixed(1) + ' points a month' },
-  { key: 'helpWithTrust', label: 'At full trust, the share of households who volunteer is', min: 0, max: 0.6, step: 0.01, show: (v, a) => Math.round((a.helpBase + v) * 100) + '%' },
-];
-function drawSliders() {
-  const a = { ...DEFAULTS, ...state.assumptions };
-  $('sliders').replaceChildren(...SLIDERS.flatMap(s => {
-    const out = el('span', {}, s.show(a[s.key], a));
-    const input = el('input', { type: 'range', min: s.min, max: s.max, step: s.step, value: a[s.key], 'aria-label': s.label,
-      oninput: e => { state.assumptions[s.key] = Number(e.target.value); out.textContent = s.show(Number(e.target.value), { ...DEFAULTS, ...state.assumptions }); drawRest(); } });
-    return [el('label', {}, el('span', {}, s.label), out), input];
+function drawWorld() {
+  const w = { ...T.WORLD, ...game.world };
+  $('world').replaceChildren(...WORLD_SLIDERS.map(s => {
+    const out = el('span', {}, s.show(w[s.key]));
+    return el('div', { class: 'slider' }, el('label', {}, el('span', {}, s.label), out),
+      el('input', { type: 'range', min: s.min, max: s.max, step: s.step, value: w[s.key], 'aria-label': s.label,
+        oninput: e => out.textContent = s.show(Number(e.target.value)),
+        onchange: e => { const v = Number(e.target.value); game.world[s.key] = v;
+          if (s.key === 'freeRiderShare') game.world.conditionalShare = Math.min(T.WORLD.conditionalShare, 1 - v - 0.05);
+          newTown(); } }));
   }));
 }
 
-function drawRest() { const result = run(); drawMonth(result); drawChart(result); drawYear(result); }
-function draw() { drawLevers(); drawSliders(); drawRest(); }
-$('skeptic').addEventListener('click', () => { state.assumptions = { ...SKEPTIC }; draw(); });
-$('defaults').addEventListener('click', () => { state.assumptions = {}; draw(); });
-draw();
+const SERIES = T.STORE_KEYS.map(k => ({ key: k, name: NAME[k], color: COLOR[k] }));
+function drawChart() {
+  const town = game.town, total = town.world.months;
+  const data = {}; for (const k of T.STORE_KEYS) data[k] = town.books[k].history.map(e => e.shoppers);
+  const W = 720, H = 280, L = 40, R = 150, Tp = 12, B = 28;
+  const x = i => L + (W - L - R) * i / (total - 1), y = v => Tp + (H - Tp - B) * (1 - v / 400);
+  const chart = $('chart'); chart.replaceChildren();
+  for (const v of [0, 100, 200, 300, 400]) chart.append(svg('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: 'var(--grid)', 'stroke-width': 1 }),
+    svg('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--dim)' }, v));
+  for (let i = 0; i < total; i += 3) chart.append(svg('text', { x: x(i), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--dim)' }, MONTHS[i % 12].slice(0, 3) + (i % 12 === 0 ? " y" + (i / 12 + 1) : '')));
+  const ends = SERIES.filter(s => data[s.key].length).map(s => ({ s, i: data[s.key].length - 1, v: data[s.key][data[s.key].length - 1] })).sort((a, b) => b.v - a.v);
+  let lastY = -99; for (const e of ends) { e.ly = Math.max(y(e.v) + 4, lastY + 14); lastY = e.ly; }
+  for (const e of ends) {
+    const pts = data[e.s.key];
+    chart.append(svg('polyline', { points: pts.map((v, i) => x(i) + ',' + y(v)).join(' '), fill: 'none', stroke: e.s.color, 'stroke-width': e.s.key === 'open' ? 3 : 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }),
+      svg('circle', { cx: x(e.i), cy: y(e.v), r: 4, fill: e.s.color, stroke: 'var(--panel)', 'stroke-width': 2 }),
+      svg('text', { x: x(e.i) + 10, y: e.ly, 'font-size': 12, fill: 'var(--text-2)' }, e.s.name + ' ' + e.v));
+  }
+  $('legend').replaceChildren(...SERIES.map(s => el('span', {}, el('i', { style: 'background:' + s.color }), s.name)));
+  const cross = svg('line', { y1: Tp, y2: H - B, stroke: 'var(--dim)', 'stroke-width': 1, 'stroke-dasharray': '3 3', visibility: 'hidden' });
+  const hit = svg('rect', { x: L, y: Tp, width: W - L - R, height: H - Tp - B, fill: 'transparent' });
+  chart.append(cross, hit);
+  const tip = $('tip');
+  const move = ev => {
+    const box = chart.getBoundingClientRect(), at = (ev.clientX - box.left) * W / box.width;
+    const i = Math.max(0, Math.min(total - 1, Math.round((at - L) / ((W - L - R) / (total - 1)))));
+    cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
+    tip.replaceChildren(el('b', {}, MONTHS[i % 12] + ', year ' + (Math.floor(i / 12) + 1)), ...SERIES.map(s => el('div', {},
+      el('span', {}, el('i', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:' + s.color }), s.name),
+      el('span', {}, data[s.key][i] == null ? '—' : data[s.key][i]))));
+    tip.hidden = false; tip.style.left = Math.min(box.width - 190, x(i) * box.width / W + 12) + 'px'; tip.style.top = '8px';
+  };
+  hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move);
+  hit.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+  $('table').replaceChildren(el('tr', {}, el('th', {}, 'Month'), ...SERIES.map(s => el('th', {}, s.name))),
+    ...Array.from({ length: Math.max(...SERIES.map(s => data[s.key].length)) }, (_, i) => el('tr', {}, el('td', {}, MONTHS[i % 12] + ' y' + (Math.floor(i / 12) + 1)), ...SERIES.map(s => el('td', {}, data[s.key][i] == null ? '' : data[s.key][i])))));
+}
+function drawSources() {
+  $('sources').replaceChildren(...T.SOURCES.map(s => el('li', {}, el('div', {}, s.finding), el('a', { class: 'why', href: s.url, target: '_blank', rel: 'noopener noreferrer' }, s.text))));
+}
+function drawAll() { drawClock(); drawStores(); drawLevers(); drawChart(); }
+
+// ---------- controls ----------
+function setSpeed(v) { game.speed = v; $('pause').setAttribute('aria-pressed', String(v === 0)); $('play').setAttribute('aria-pressed', String(v === 1)); $('fast').setAttribute('aria-pressed', String(v === 6)); }
+$('pause').addEventListener('click', () => setSpeed(0));
+$('play').addEventListener('click', () => setSpeed(1));
+$('fast').addEventListener('click', () => setSpeed(6));
+$('restart').addEventListener('click', () => { game.seed++; newTown(); });
+$('doubter').addEventListener('click', () => { game.world = { freeRiderShare: 0.6, conditionalShare: 0.3, chainAdvantage: 0.12, convenience: 1.0 }; drawWorld(); newTown(); });
+$('reset').addEventListener('click', () => { game.world = {}; drawWorld(); newTown(); });
+window.OpenStoreGame = { game, nextMonth };   // for tests
+
+drawSources(); drawWorld(); newTown();
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
