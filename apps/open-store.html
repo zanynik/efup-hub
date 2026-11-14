@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Open Store — a zero-profit game</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .viz-root{--series-you:#199e70;--series-super:#3987e5;--series-coop:#d95926;--grid:#2a313c;--text-2:#b6bec8}
+  .levers{display:grid;gap:14px}
+  .lever h3{margin:0 0 6px;font-size:15px}
+  .seg{display:flex;flex-wrap:wrap;gap:8px}
+  .seg button{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);font-weight:500;text-align:left}
+  .seg button[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .seg small{display:block;color:var(--dim);font-weight:400;font-size:12px}
+  .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  .stat .box{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .stat .n{font-size:20px;font-weight:700}
+  .stat .l{color:var(--dim);font-size:12px}
+  .month-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .month-head h2{margin:0;font-size:20px}
+  .event{border-left:3px solid var(--warn);padding:6px 12px;margin:12px 0;background:var(--panel-2);border-radius:0 8px 8px 0}
+  .ledger{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+  .ledger td{padding:4px 0;border-bottom:1px solid var(--line)}
+  .ledger td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+  .ledger tr.total td{font-weight:700;border-bottom:0}
+  .receipt{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;background:#f6f3ea;color:#22201b;border-radius:6px;padding:14px 16px;max-width:300px;margin:14px auto 0;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .receipt hr{border:0;border-top:1px dashed #9a958a;margin:8px 0}
+  .receipt .back{display:block;margin:0;color:#22201b;font-size:13px;font-weight:700}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-2);margin:6px 0 2px}
+  .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+  .chart-wrap{position:relative}
+  svg.chart{width:100%;height:auto;display:block}
+  .tip{position:absolute;pointer-events:none;background:#0b0e12;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;min-width:150px}
+  .tip b{display:block;margin-bottom:4px}
+  .tip div{display:flex;justify-content:space-between;gap:12px}
+  .assume label{display:flex;justify-content:space-between;gap:10px;margin:12px 0 2px;color:var(--ink)}
+  .assume input[type=range]{width:100%;accent-color:var(--accent)}
+  table.data{width:100%;border-collapse:collapse;font-size:13px}
+  table.data th,table.data td{padding:4px 6px;text-align:right;border-bottom:1px solid var(--line)}
+  table.data th:first-child,table.data td:first-child{text-align:left}
+  summary{cursor:pointer;color:var(--dim);font-size:14px}
+</style>
+</head>
+<body>
+<section class="app viz-root">
+  <a class="back" href="../index.html">← Hub</a>
+  <h1>🚪 The Open Store</h1>
+  <p class="sub">Run a neighbourhood grocery store for a year. Three decisions: who may walk in, who does the work, and what happens to the money left over.</p>
+
+  <div class="panel">
+    <div class="levers" id="levers"></div>
+  </div>
+
+  <div class="panel" id="monthPanel">
+    <div class="month-head"><h2 id="monthTitle"></h2><span class="pill" id="monthPill"></span></div>
+    <div id="eventBox"></div>
+    <div class="stat" id="monthStats"></div>
+    <table class="ledger" id="ledger"></table>
+    <div class="receipt" id="receipt"></div>
+    <div class="actions" id="actions"></div>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin:0 0 2px;font-size:17px">Households shopping at the store</h2>
+    <p class="muted" style="margin:0">Your store so far, beside a supermarket and a member co-op living through the same year.</p>
+    <div class="legend" id="legend"></div>
+    <div class="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 720 300" role="img" aria-label="Households shopping at each store, month by month"></svg><div class="tip" id="tip" hidden></div></div>
+    <div class="stat" id="yearStats" style="margin-top:12px"></div>
+    <details style="margin-top:12px"><summary>The numbers as a table</summary><div style="overflow-x:auto"><table class="data" id="table"></table></div></details>
+  </div>
+
+  <div class="panel assume">
+    <h2 style="margin:0 0 4px;font-size:17px">What would have to be true?</h2>
+    <p class="muted" style="margin:0">This is a model, not a forecast. The open store leans on two beliefs. Move them to where you actually think they are, and see whether the store still works.</p>
+    <div id="sliders"></div>
+    <div class="actions"><button class="ghost" id="skeptic">Use a doubter's numbers</button><button class="ghost" id="defaults">Back to the starting numbers</button></div>
+    <p class="muted" style="margin-bottom:0">Everything else is fixed and written down in <a href="open-store-model.js">the model</a>: 400 households spending €220 a month, shelf prices 25% above cost, €9,000 of fixed costs, 3% lost to energy and spoilage, €16 an hour for work nobody volunteers for. A broken freezer in March, a shortage in June, a discount chain in September.</p>
+  </div>
+</section>
+
+<script src="open-store-model.js"></script>
+<script>
+const { simulate, PRESETS, SKEPTIC, DEFAULTS, MONTHS } = window.OpenStore;
+const $ = id => document.getElementById(id);
+const el = (tag, props, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) { if (k === 'class') n.className = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v); }
+  for (const k of kids) n.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  return n;
+};
+const svg = (tag, attrs, text) => { const n = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, v); if (text != null) n.textContent = text; return n; };
+const euro = n => (n < 0 ? '−' : '') + '€' + Math.abs(Math.round(n)).toLocaleString('en');
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const LEVERS = [
+  { key: 'door', title: 'The door', options: [
+    ['open', 'Open to anyone', 'Walk in like any shop'],
+    ['members', 'Members only', 'A €100 share and a card check'] ] },
+  { key: 'help', title: 'The work', options: [
+    ['voluntary', 'Whoever wants to help', 'Paid staff cover the rest'],
+    ['mandatory', 'Three hours a month, or no entry', 'Every member works'],
+    ['paid', 'Paid staff only', 'Nobody is asked'] ] },
+  { key: 'surplus', title: 'The money left over', options: [
+    ['refund', 'Give it back on receipts', 'After a repair fund'],
+    ['keep', 'The store keeps it', 'Reserves, growth or owners'] ] },
+];
+
+const state = { levers: { ...PRESETS.open.levers }, assumptions: {}, choices: {}, month: 1 };
+const run = () => simulate(state.levers, state.assumptions, state.choices);
+const reference = key => simulate(PRESETS[key].levers, state.assumptions, PRESETS[key].choices);
+
+function drawLevers() {
+  $('levers').replaceChildren(...LEVERS.map(l => el('div', { class: 'lever' },
+    el('h3', {}, l.title),
+    el('div', { class: 'seg', role: 'group', 'aria-label': l.title }, ...l.options.map(([value, label, hint]) =>
+      el('button', { type: 'button', 'aria-pressed': String(state.levers[l.key] === value),
+        onclick: () => { state.levers[l.key] = value; draw(); } }, label, el('small', {}, hint)))))));
+}
+
+function drawMonth(result) {
+  const m = result.months[state.month - 1];
+  const waiting = state.month === 6 && !state.choices[6];
+  $('monthTitle').textContent = MONTH_NAMES[state.month - 1];
+  $('monthPill').textContent = 'Month ' + state.month + ' of ' + MONTHS;
+  const box = $('eventBox'); box.replaceChildren();
+  if (m.event) box.append(el('div', { class: 'event' }, el('b', {}, m.event + '. '),
+    waiting ? 'Shelves are emptying. Other shops have put prices up 15%. What does yours do?' : m.notes.join(' ')));
+  const helpers = m.hoursNeeded ? Math.round(100 * m.volunteerHours / m.hoursNeeded) : 0;
+  $('monthStats').replaceChildren(
+    stat(m.shoppers.toLocaleString('en'), 'households shopping'),
+    stat(helpers + '%', 'of the work done by volunteers'),
+    stat(Math.round(m.trust * 100) + ' / 100', 'trust in the store'),
+    stat(euro(m.reserve), 'in the reserve'));
+  const row = (label, value, cls) => el('tr', cls ? { class: cls } : {}, el('td', {}, label), el('td', {}, value));
+  $('ledger').replaceChildren(
+    row('Sales', euro(m.sales)),
+    row('Goods', euro(-m.goods)),
+    row('Rent and core team', euro(-m.fixed)),
+    row('Energy and spoilage', euro(-m.overhead)),
+    row('Paid hours nobody volunteered for', euro(-m.paidLabour)),
+    m.interest ? row('Interest on money borrowed', euro(-m.interest)) : '',
+    row('Left over this month', euro(m.surplus), 'total'),
+    m.refund ? row('Given back to shoppers', euro(m.refund)) : '',
+    row(m.kept >= 0 ? 'Kept by the store' : 'Taken from the reserve', euro(Math.abs(m.kept))));
+  const basket = 62.4;
+  $('receipt').replaceChildren(
+    el('div', {}, 'YOUR NEIGHBOURHOOD STORE'), el('hr'),
+    el('div', {}, 'Bread, oats, apples, oil …'), el('div', {}, 'TOTAL            €' + basket.toFixed(2)), el('hr'),
+    m.refund > 0
+      ? el('p', { class: 'back' }, 'Bring this receipt back next month: €' + (basket * m.refundRate).toFixed(2) + ' is yours (' + (m.refundRate * 100).toFixed(1) + '% of this receipt).')
+      : el('div', {}, state.levers.surplus === 'refund' ? 'Nothing was left over this month.' : 'Thank you for shopping with us.'));
+  const actions = $('actions'); actions.replaceChildren();
+  if (waiting) {
+    actions.append(
+      el('button', { type: 'button', onclick: () => { state.choices[6] = 'hold'; draw(); } }, 'Hold prices'),
+      el('button', { type: 'button', class: 'ghost', onclick: () => { state.choices[6] = 'raise'; draw(); } }, 'Raise prices 15%'));
+  } else if (state.month < MONTHS) {
+    actions.append(
+      el('button', { type: 'button', id: 'next', onclick: () => { state.month++; draw(); } }, 'Next month →'),
+      el('button', { type: 'button', class: 'ghost', onclick: () => { state.choices[6] = state.choices[6] || 'hold'; state.month = MONTHS; draw(); } }, 'Skip to December'));
+  } else {
+    actions.append(el('button', { type: 'button', onclick: () => { state.month = 1; state.choices = {}; draw(); } }, 'Play the year again'));
+  }
+}
+const stat = (n, l) => el('div', { class: 'box' }, el('div', { class: 'n' }, n), el('div', { class: 'l' }, l));
+
+const SERIES = [
+  { key: 'you', name: 'Your store', color: 'var(--series-you)' },
+  { key: 'supermarket', name: 'Supermarket', color: 'var(--series-super)' },
+  { key: 'coop', name: 'Member co-op', color: 'var(--series-coop)' },
+];
+
+function drawChart(result) {
+  const shown = state.month;
+  const data = { you: result.months.slice(0, shown).map(m => m.shoppers), supermarket: reference('supermarket').months.map(m => m.shoppers), coop: reference('coop').months.map(m => m.shoppers) };
+  const W = 720, H = 300, L = 44, R = 136, T = 14, B = 30;
+  const all = [...data.you, ...data.supermarket, ...data.coop];
+  const lo = Math.floor(Math.min(...all) / 50) * 50, hi = Math.max(lo + 100, Math.ceil(Math.max(...all) / 50) * 50);
+  const x = i => L + (W - L - R) * i / (MONTHS - 1), y = v => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
+  const chart = $('chart'); chart.replaceChildren();
+  for (let t = 0; t <= 4; t++) {
+    const v = lo + (hi - lo) * t / 4;
+    chart.append(svg('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: 'var(--grid)', 'stroke-width': 1 }),
+      svg('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--dim)' }, Math.round(v)));
+  }
+  for (let i = 0; i < MONTHS; i += 1) chart.append(svg('text', { x: x(i), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--dim)' }, MONTH_NAMES[i].slice(0, 3)));
+  // Direct labels at the line ends, nudged apart when two lines finish close together.
+  const ends = SERIES.map(s => ({ s, v: data[s.key][data[s.key].length - 1], i: data[s.key].length - 1 })).sort((a, b) => b.v - a.v);
+  let lastY = -99;
+  for (const e of ends) { e.ly = Math.max(y(e.v) + 4, lastY + 14); lastY = e.ly; }
+  for (const s of SERIES) {
+    const pts = data[s.key];
+    chart.append(svg('polyline', { points: pts.map((v, i) => x(i) + ',' + y(v)).join(' '), fill: 'none', stroke: s.color, 'stroke-width': s.key === 'you' ? 3 : 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+    const e = ends.find(e => e.s === s);
+    chart.append(svg('circle', { cx: x(e.i), cy: y(e.v), r: 4, fill: s.color, stroke: 'var(--panel)', 'stroke-width': 2 }),
+      svg('text', { x: x(e.i) + 10, y: e.i < MONTHS - 1 ? y(e.v) - 8 : e.ly, 'font-size': 12, fill: 'var(--text-2)' }, s.name + ' ' + e.v));
+  }
+  $('legend').replaceChildren(...SERIES.map(s => el('span', {}, el('i', { style: 'background:' + s.color }), s.name)));
+
+  // Hover: a crosshair and one tooltip for all three stores in that month.
+  const cross = svg('line', { y1: T, y2: H - B, stroke: 'var(--dim)', 'stroke-width': 1, 'stroke-dasharray': '3 3', visibility: 'hidden' });
+  const hit = svg('rect', { x: L, y: T, width: W - L - R, height: H - T - B, fill: 'transparent' });
+  chart.append(cross, hit);
+  const tip = $('tip');
+  const move = ev => {
+    const box = chart.getBoundingClientRect(), px = (ev.clientX - box.left) * W / box.width;
+    const i = Math.max(0, Math.min(MONTHS - 1, Math.round((px - L) / ((W - L - R) / (MONTHS - 1)))));
+    cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
+    tip.replaceChildren(el('b', {}, MONTH_NAMES[i]), ...SERIES.map(s => el('div', {}, el('span', {}, el('i', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:' + s.color }), s.name),
+      el('span', {}, data[s.key][i] == null ? 'not yet' : data[s.key][i]))));
+    tip.hidden = false;
+    const left = x(i) * box.width / W;
+    tip.style.left = Math.min(box.width - 170, left + 12) + 'px'; tip.style.top = '8px';
+  };
+  hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move);
+  hit.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+
+  $('table').replaceChildren(
+    el('tr', {}, el('th', {}, 'Month'), ...SERIES.map(s => el('th', {}, s.name))),
+    ...MONTH_NAMES.map((name, i) => el('tr', {}, el('td', {}, name), ...SERIES.map(s => el('td', {}, data[s.key][i] == null ? '' : data[s.key][i])))));
+}
+
+function drawYear(result) {
+  const upTo = result.months.slice(0, state.month);
+  const sum = key => upTo.reduce((t, m) => t + m[key], 0);
+  $('yearStats').replaceChildren(
+    stat(euro(sum('refund')), 'given back to shoppers so far'),
+    stat(Math.round(sum('volunteerHours')).toLocaleString('en') + ' h', 'given by volunteers'),
+    stat(euro(sum('paidLabour')), 'paid for uncovered hours'),
+    stat(euro(Math.min(...upTo.map(m => m.reserve))), 'lowest the reserve fell'));
+}
+
+const SLIDERS = [
+  { key: 'refundTrust', label: 'When 5% comes back on a receipt, trust in the store rises by', min: 0, max: 1, step: 0.05, show: v => '+' + (v * 5).toFixed(1) + ' points a month' },
+  { key: 'helpWithTrust', label: 'At full trust, the share of households who volunteer is', min: 0, max: 0.6, step: 0.01, show: (v, a) => Math.round((a.helpBase + v) * 100) + '%' },
+];
+function drawSliders() {
+  const a = { ...DEFAULTS, ...state.assumptions };
+  $('sliders').replaceChildren(...SLIDERS.flatMap(s => {
+    const out = el('span', {}, s.show(a[s.key], a));
+    const input = el('input', { type: 'range', min: s.min, max: s.max, step: s.step, value: a[s.key], 'aria-label': s.label,
+      oninput: e => { state.assumptions[s.key] = Number(e.target.value); out.textContent = s.show(Number(e.target.value), { ...DEFAULTS, ...state.assumptions }); drawRest(); } });
+    return [el('label', {}, el('span', {}, s.label), out), input];
+  }));
+}
+
+function drawRest() { const result = run(); drawMonth(result); drawChart(result); drawYear(result); }
+function draw() { drawLevers(); drawSliders(); drawRest(); }
+$('skeptic').addEventListener('click', () => { state.assumptions = { ...SKEPTIC }; draw(); });
+$('defaults').addEventListener('click', () => { state.assumptions = {}; draw(); });
+draw();
+</script>
+</body>
+</html>

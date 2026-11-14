@@ -13,6 +13,7 @@ The notes are *not* included here. This repo turns their **ideas** into tiny, do
 | 🪜 Ask Why (5-Whys) | "Ask why — and don't stop." |
 | 🎛️ Reward Dial | Reinforcement-learning → addiction → equanimous zero |
 | 🛒 Zero-Profit Calculator | The zero-profit grocery store / EFUP |
+| 🚪 The Open Store (game) | "A game of zero profit": open door, voluntary help, surplus refunded on receipts — with the assumptions on sliders (`node apps/open-store-model.test.js` checks the arithmetic) |
 | 🪞 Ego Reframe | "Reality happens irrespective of the ego." |
 | 🧭 Idea Compass | "Find your people" / alignment matrix |
 | 📻 My Media Feed | Personal podcast-style feed from scattered notes |
